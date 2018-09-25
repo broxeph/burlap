@@ -235,7 +235,7 @@ class BuildBotSatchel(ServiceSatchel):
     def rsync_paths(self):
         r = self.local_renderer
         for from_path, to_path, to_user, to_group, to_perms in r.env.rsync_paths:
-            assert os.path.isfile(from_path)
+            assert os.path.isfile(from_path), 'File %s does not exist locally.' % from_path
             r.env.from_path = from_path
             r.env.to_path = to_path
             r.env.to_user = to_user
