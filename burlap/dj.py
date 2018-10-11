@@ -511,10 +511,10 @@ class DjangoSatchel(Satchel):
         prior_database_names = set()
         #print('iter_unique_databases.begin.site_default:', site)
         for _site, site_data in self.iter_sites(site=site, no_secure=True):
-            #print('iter_unique_databases.site:', site)
+            #print('iter_unique_databases._site:', _site)
             self.set_db(site=_site)
             key = (r.env.db_name, r.env.db_user, r.env.db_host, r.env.db_engine)
-            #print('iter_unique_databases.site:', site, key)
+            #print('iter_unique_databases._site:', _site, key)
             if key in prior_database_names:
                 continue
             prior_database_names.add(key)
