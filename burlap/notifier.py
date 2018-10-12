@@ -83,6 +83,13 @@ class DeploymentNotifierSatchel(Satchel):
         pass
 
 class LoginNotifierSatchel(Satchel):
+    """
+    Causes a notification email to be sent whenever someone logs into the server.
+
+    The mail functionality setup by this satchel is pretty light, and generally assumes your server hasn't been blacklisted for spamming.
+
+    If you require a specific SMTP login to send email, then you might have to enable the postfix satchel as well.
+    """
 
     name = 'loginnotifier'
 
@@ -93,6 +100,20 @@ class LoginNotifierSatchel(Satchel):
         self.env.script_user = 'root'
         self.env.script_group = 'root'
         self.env.script_chmod = 'u+rx,g+rx'
+        self.env.append_bash_aliases = False
+
+    @property
+    def packager_system_packages(self):
+        return {
+            UBUNTU: [
+                # 'postfix',
+                'mailutils',
+                # 'libsasl2-2',
+                # 'ca-certificates',
+                # 'libsasl2-modules',
+                # 'nano',
+            ],
+        }
 
     @task(precursors=['packager', 'user'])
     def configure(self):
@@ -106,6 +127,9 @@ class LoginNotifierSatchel(Satchel):
             r.sudo('chmod {script_chmod} {script_installation_path}')
         else:
             r.sudo('rm {script_installation_path}')
+
+        if r.env.append_bash_aliases:
+            r.append(text='bash %s' % r.env.script_installation_path, filename='~/.bash_aliases')
 
 
 deployment_notifier = DeploymentNotifierSatchel()

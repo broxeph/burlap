@@ -1973,6 +1973,7 @@ def run_or_dryrun(*args, **kwargs):
 def sudo_or_dryrun(*args, **kwargs):
     dryrun = get_dryrun(kwargs.get('dryrun'))
     user = kwargs.get('user')
+    ignore_errors = int(kwargs.pop('ignore_errors', 0))
     if 'dryrun' in kwargs:
         del kwargs['dryrun']
     if dryrun:
@@ -1985,7 +1986,11 @@ def sudo_or_dryrun(*args, **kwargs):
         else:
             print(cmd)
     else:
-        return _sudo(*args, **kwargs)
+        if ignore_errors:
+            with settings(warn_only=True):
+                return _sudo(*args, **kwargs)
+        else:
+            return _sudo(*args, **kwargs)
 
 def reboot_or_dryrun(*args, **kwargs):
     """

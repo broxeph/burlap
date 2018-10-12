@@ -138,6 +138,11 @@ class BuildBotSatchel(ServiceSatchel):
         with settings(**s):
             r.run(self.restart_master_command)
 
+    @task
+    def upgrade_master(self):
+        r = self.local_renderer
+        r.run('sudo -u {bb_user} bash -c "cd {project_dir}/src/buildbot; {virtualenv_dir}/bin/buildbot upgrade-master {project_dir}/src/buildbot/master"')
+
     def get_restart_worker_command(self, name=None):
         r = self.local_renderer
         parts = []
