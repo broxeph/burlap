@@ -229,8 +229,6 @@ class SupervisorSatchel(ServiceSatchel):
                         local_fn = self.write_to_file(conf_content)
                         self.put_or_dryrun(local_path=local_fn, remote_path=remote_fn, use_sudo=True)
 
-                    process_groups.append(os.path.splitext(conf_name)[0])
-
         self.env.services_rendered = '\n'.join(supervisor_services)
 
         if int(upload):
@@ -254,8 +252,6 @@ class SupervisorSatchel(ServiceSatchel):
         self.render_paths()
 
         supervisor_services = []
-
-        process_groups = []
 
         if r.env.purge_all_confs:
             r.sudo('rm -Rf /etc/supervisor/conf.d/*')
@@ -286,10 +282,7 @@ class SupervisorSatchel(ServiceSatchel):
                     if self.dryrun:
                         print('supervisor conf filename:', conf_name)
                         print(conf_content)
-                    remote_fn = os.path.join(self.env.conf_dir, conf_name)
-                    local_fn = self.write_to_file(conf_content)
-#
-                    process_groups.append(os.path.splitext(conf_name)[0])
+                    self.write_to_file(conf_content)
 
         self.env.services_rendered = '\n'.join(supervisor_services)
 
@@ -300,10 +293,9 @@ class SupervisorSatchel(ServiceSatchel):
         # error message is supervisor isn't running.
         if not self.is_running():
             self.start()
-
-        for pg in process_groups:
-            r.env.pg = pg
-            r.sudo('supervisorctl add {pg}')
+        
+        # Reload config and then add and remove as necessary (restarts programs)
+        r.sudo('supervisorctl update')
 
     @task(precursors=['packager', 'user', 'rabbitmq'])
     def configure(self, **kwargs):
