@@ -293,7 +293,7 @@ class SupervisorSatchel(ServiceSatchel):
         # error message is supervisor isn't running.
         if not self.is_running():
             self.start()
-        
+
         # Reload config and then add and remove as necessary (restarts programs)
         r.sudo('supervisorctl update')
 
