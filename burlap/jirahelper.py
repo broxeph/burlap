@@ -160,13 +160,16 @@ class JiraHelperSatchel(ContainerSatchel):
                 next_transition_id = transition_to_id.get(next_transition_name)
                 print('next_transition_id:', next_transition_id)
                 if next_transition_name:
-                    if issue.fields.assignee.raw:
-                        assignee_name = issue.fields.assignee.name
+                    if issue.fields.assignee:
+                        if issue.fields.assignee.raw:
+                            assignee_name = issue.fields.assignee.name
+                        else:
+                            # Get assignee name directly
+                            # https://community.atlassian.com/t5/Jira-questions/Jira-in-Python-issue-fields-reporter-name-
+                            # errors-with-TypeError/qaq-p/937924
+                            assignee_name = issue.fields.assignee._session['name']
                     else:
-                        # Get assignee name directly
-                        # https://community.atlassian.com/t5/Jira-questions/Jira-in-Python-issue-fields-reporter-name-
-                        # errors-with-TypeError/qaq-p/937924
-                        assignee_name = issue.fields.assignee._session['name']
+                        assignee_name = None
 
                     # Get new assignee by status
                     new_assignee = self.env.assignee_by_status.get(
@@ -177,7 +180,7 @@ class JiraHelperSatchel(ContainerSatchel):
 
                     # If assigning to reporter, get reporter name.
                     if new_assignee == 'reporter':
-                        if issue.fields.assignee.raw:
+                        if issue.fields.reporter.raw:
                             new_assignee = issue.fields.reporter.name
                         else:
                             # Get reporter name directly
