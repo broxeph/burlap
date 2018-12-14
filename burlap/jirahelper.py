@@ -147,18 +147,18 @@ class JiraHelperSatchel(ContainerSatchel):
             while 1:
                 print('Looking up jira ticket %s...' % ticket)
                 issue = jira.issue(ticket)
-                print('Ticket %s retrieved.' % ticket)
+                self.vprint('Ticket %s retrieved.' % ticket)
                 transition_to_id = dict((t['name'], t['id']) for t in jira.transitions(issue))
-                print('%i allowable transitions found:' % len(transition_to_id))
+                self.vprint('%i allowable transitions found:' % len(transition_to_id))
                 pprint(transition_to_id)
-                print('issue.fields.status.id:', issue.fields.status.id)
-                print('issue.fields.status.name:', issue.fields.status.name)
+                self.vprint('issue.fields.status.id:', issue.fields.status.id)
+                self.vprint('issue.fields.status.name:', issue.fields.status.name)
                 jira_status_id = issue.fields.status.name.title()
-                print('jira_status_id:', jira_status_id)
+                self.vprint('jira_status_id:', jira_status_id)
                 next_transition_name = self.env.deploy_workflow.get(jira_status_id)
-                print('next_transition_name:', next_transition_name)
+                self.vprint('next_transition_name:', next_transition_name)
                 next_transition_id = transition_to_id.get(next_transition_name)
-                print('next_transition_id:', next_transition_id)
+                self.vprint('next_transition_id:', next_transition_id)
                 if next_transition_name:
                     if issue.fields.assignee:
                         if issue.fields.assignee.raw:
