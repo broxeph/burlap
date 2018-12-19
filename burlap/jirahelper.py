@@ -160,15 +160,33 @@ class JiraHelperSatchel(ContainerSatchel):
                 next_transition_id = transition_to_id.get(next_transition_name)
                 print('next_transition_id:', next_transition_id)
                 if next_transition_name:
-                    new_fields = {}
+                    if issue.fields.assignee:
+                        if issue.fields.assignee.raw:
+                            assignee_name = issue.fields.assignee.name
+                        else:
+                            # Get assignee name directly
+                            # https://community.atlassian.com/t5/Jira-questions/Jira-in-Python-issue-fields-reporter-name-
+                            # errors-with-TypeError/qaq-p/937924
+                            assignee_name = issue.fields.assignee._session['name']
+                    else:
+                        assignee_name = None
+
+                    # Get new assignee by status
                     new_assignee = self.env.assignee_by_status.get(
                         #issue.fields.status.name.title(),
                         next_transition_name,
-                        issue.fields.assignee.name if issue.fields.assignee else None,
+                        assignee_name,
                     )
-                    if new_assignee == 'reporter' and issue.fields.reporter:
-                        new_assignee = issue.fields.reporter.name
-                    self.vprint('new_assignee:', new_assignee)
+
+                    # If assigning to reporter, get reporter name.
+                    if new_assignee == 'reporter':
+                        if issue.fields.reporter.raw:
+                            new_assignee = issue.fields.reporter.name
+                        else:
+                            # Get reporter name directly
+                            # https://community.atlassian.com/t5/Jira-questions/Jira-in-Python-issue-fields-reporter-name-
+                            # errors-with-TypeError/qaq-p/937924
+                            new_assignee = issue.fields.reporter._session['name']
 
                     print('Updating ticket %s to status %s (%s) and assigning it to %s.' % (ticket, next_transition_name, next_transition_id, new_assignee))
                     if not self.dryrun:
