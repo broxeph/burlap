@@ -144,11 +144,13 @@ class PostgreSQLSatchel(DatabaseSatchel):
 
         # Note, if you use gzip, you can't use parallel restore.
         #self.env.dump_command = 'time pg_dump -c -U {db_user} --no-password --blobs --format=c --schema=public --host={db_host} {db_name} > {dump_fn}'
-        self.env.dump_command = 'time pg_dump -c -U {db_user} --no-password --blobs --format=c --schema=public --host={db_host} {db_name} | gzip -c > {dump_fn}'
+        self.env.dump_command = 'time pg_dump -c -U {db_user} --no-password --blobs --format=c --schema=public --host={db_host} {db_name} | ' \
+            'gzip -c > {dump_fn}'
         self.env.dump_fn_template = '{dump_dest_dir}/db_{db_type}_{SITE}_{ROLE}_{db_name}_$(date +%Y%m%d).sql.gz'
 
         #self.env.load_command = 'gunzip < {remote_dump_fn} | pg_restore --jobs=8 -U {db_root_username} --format=c --create --dbname={db_name}'
-        self.env.load_command = 'gunzip < {remote_dump_fn} | pg_restore -U {db_root_username} --host={db_host} --format=c --create --dbname={db_name}'
+        self.env.load_command = 'gunzip < {remote_dump_fn} | ' \
+            'pg_restore -U {db_root_username} --host={db_host} --format=c --create --clean --if-exists --dbname={db_name}'
 
         self.env.createlangs = ['plpgsql'] # plpythonu
         self.env.postgres_user = 'postgres'
@@ -415,9 +417,9 @@ class PostgreSQLSatchel(DatabaseSatchel):
             r.env.db_host = force_host
 
         with settings(warn_only=True):
-            r.sudo('dropdb --if-exists --user={db_root_username} --host={db_host} {db_name}', user=r.env.postgres_user)
+            r.sudo('dropdb --if-exists --no-password --user={db_root_username} --host={db_host} {db_name}', user=r.env.postgres_user)
 
-        r.sudo('psql --user={db_root_username} --host={db_host} -c "CREATE DATABASE {db_name};"', user=r.env.postgres_user)
+        r.sudo('psql --no-password --user={db_root_username} --host={db_host} -c "CREATE DATABASE {db_name};"', user=r.env.postgres_user)
 
         with settings(warn_only=True):
 
@@ -441,7 +443,9 @@ class PostgreSQLSatchel(DatabaseSatchel):
             r.sudo('createlang -U {db_root_username} --host={db_host} {createlang} {db_name} || true', user=r.env.postgres_user)
 
         if not prep_only:
-            r.sudo(r.env.load_command, user=r.env.postgres_user)
+            # Ignore errors needed to work around bug "ERROR:  schema "public" already exists", which is thrown in 9.6 even if we use --clean and --if-exists?
+            with settings(warn_only=True):
+                r.sudo(r.env.load_command, user=r.env.postgres_user)
 
     @task
     def shell(self, name='default', site=None, **kwargs):

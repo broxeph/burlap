@@ -2603,6 +2603,7 @@ def render_to_string(template, extra=None):
         context.update(extra)
     else:
         context = env
+    # print('context:', context)
     rendered_content = t.render(**context)
     rendered_content = rendered_content.replace('&quot;', '"')
     return rendered_content

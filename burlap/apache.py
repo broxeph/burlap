@@ -2,6 +2,7 @@ from __future__ import print_function
 
 import os
 import sys
+from functools import partial
 
 from burlap import ServiceSatchel
 from burlap.constants import *
@@ -119,6 +120,7 @@ class ApacheSatchel(ServiceSatchel):
 
         self.env.ssl = True
         self.env.ssl_chmod = 440
+        self.env.ssl_port = 443
 
         # A list of path patterns that should have HTTPS enforced.
         self.env.ssl_secure_paths_enforce = True
@@ -229,6 +231,9 @@ class ApacheSatchel(ServiceSatchel):
         # The local and remote relative directory where the SSL certificates are stored.
         self.env.ssl_dir_local = 'ssl'
 
+        # The default remote directory to store SSL certificates.
+        self.env.ssl_dir = '/etc/apache2/ssl/'
+
         # An optional segment to insert into the domain, customizable by role.
         # Useful for easily keying domain-local.com/domain-dev.com/domain-staging.com.
         self.env.locale = ''
@@ -299,45 +304,48 @@ class ApacheSatchel(ServiceSatchel):
 
         return r
 
-#     def iter_certificates(self):
-#         if self.verbose:
-#             print('apache_ssl_domain:', self.genv.apache_ssl_domain, file=sys.stderr)
-#         for cert_type, cert_file_template in self.genv.apache_ssl_certificates_templates:
-#             if self.verbose:
-#                 print('cert_type, cert_file_template:', cert_type, cert_file_template, file=sys.stderr)
-#             _local_cert_file = os.path.join(self.genv.apache_ssl_dir_local, cert_file_template % self.genv)
-#             local_cert_file = self.find_template(_local_cert_file)
-#             assert local_cert_file, 'Unable to find local certificate file: %s' % (_local_cert_file,)
-#             remote_cert_file = os.path.join(self.genv.apache_ssl_dir, cert_file_template % self.genv)
-#             yield cert_type, local_cert_file, remote_cert_file
-#
-#     @task
-#     def install_ssl(self, site=ALL):
-#         from burlap.common import iter_sites
-#         verbose = self.verbose
-#
-#         for site, site_data in iter_sites(site=site, setter=self.set_site_specifics):
-#
-#             site_secure = site+'_secure'
-#             if site_secure not in self.genv.sites:
-#                 continue
-#             self.set_site_specifics(site_secure)
-#
-#             self.sudo_or_dryrun('mkdir -p %(apache_ssl_dir)s' % self.genv)
-#
-#             if self.genv.apache_ssl:
-#                 for cert_type, local_cert_file, remote_cert_file in self.iter_certificates():
-#                     if verbose:
-#                         print('='*80)
-#                         print('Installing certificate %s...' % (remote_cert_file,))
-#                     self.put_or_dryrun(
-#                         local_path=local_cert_file,
-#                         remote_path=remote_cert_file,
-#                         use_sudo=True)
-#
-#         self.sudo_or_dryrun('mkdir -p %(apache_ssl_dir)s' % self.genv)
-#         self.sudo_or_dryrun('chown -R %(apache_web_user)s:%(apache_web_group)s %(apache_ssl_dir)s' % self.genv)
-#         self.sudo_or_dryrun('chmod -R %(apache_ssl_chmod)s %(apache_ssl_dir)s' % self.genv)
+    def iter_certificates(self):
+        r = self.local_renderer
+        if self.verbose:
+            print('apache_ssl_domain:', r.env.ssl_domain, file=sys.stderr)
+        for cert_type, cert_file_template in r.env.ssl_certificates_templates:
+            if self.verbose:
+                print('cert_type, cert_file_template:', cert_type, cert_file_template, file=sys.stderr)
+            _local_cert_file = os.path.join(r.env.ssl_dir_local, cert_file_template % self.genv)
+            local_cert_file = self.find_template(_local_cert_file)
+            assert local_cert_file, 'Unable to find local certificate file: %s' % (_local_cert_file,)
+            remote_cert_file = os.path.join(r.env.ssl_dir, cert_file_template % self.genv)
+            yield cert_type, local_cert_file, remote_cert_file
+
+    @task
+    def install_ssl(self, site=ALL):
+        from burlap.common import iter_sites
+        verbose = self.verbose
+
+        for _site, site_data in iter_sites(site=site, setter=self.set_site_specifics):
+
+            site_secure = _site
+            if '_secure' not in site_secure:
+                site_secure = _site + '_secure'
+            if site_secure not in self.genv.sites:
+                continue
+            self.set_site_specifics(site_secure)
+
+            self.sudo_or_dryrun('mkdir -p %(apache_ssl_dir)s' % self.genv)
+
+            if self.genv.apache_ssl:
+                for cert_type, local_cert_file, remote_cert_file in self.iter_certificates():
+                    if verbose:
+                        print('='*80)
+                        print('Installing certificate %s...' % (remote_cert_file,))
+                    self.put_or_dryrun(
+                        local_path=local_cert_file,
+                        remote_path=remote_cert_file,
+                        use_sudo=True)
+
+        self.sudo_or_dryrun('mkdir -p %(apache_ssl_dir)s' % self.genv)
+        self.sudo_or_dryrun('chown -R %(apache_web_user)s:%(apache_web_group)s %(apache_ssl_dir)s' % self.genv)
+        self.sudo_or_dryrun('chmod -R %(apache_ssl_chmod)s %(apache_ssl_dir)s' % self.genv)
 
     @task
     def install_auth_basic_user_file(self, site=None):
@@ -589,9 +597,9 @@ class ApacheSatchel(ServiceSatchel):
                     print('Site:', _site, file=sys.stderr)
                     print('-'*80, file=sys.stderr)
 
+                r.env.ssl = _site.endswith('_secure')
                 r.env.apache_site = _site
                 r.env.server_name = r.format(r.env.domain_template)
-                print('r.env.server_name:', r.env.server_name)
 
                 # Write WSGI template
                 if r.env.wsgi_enabled:
@@ -604,13 +612,18 @@ class ApacheSatchel(ServiceSatchel):
 
                 # Write site configuration.
                 r.pc('Writing site configuration for site %s...' % _site)
-                from functools import partial
+                r.env.auth_basic_authuserfile = r.format(self.env.auth_basic_authuserfile)
+                r.env.ssl_certificates = list(self.iter_certificates())
+                if r.env.server_aliases_template:
+                    r.env.server_aliases = r.format(r.env.server_aliases_template)
+                if r.env.domain_with_sub_template:
+                    r.env.domain_with_sub = r.format(r.env.domain_with_sub_template)
+                if r.env.domain_without_sub_template:
+                    r.env.domain_without_sub = r.format(r.env.domain_without_sub_template)
+                if r.env.domain_template:
+                    r.env.domain = r.format(r.env.domain_template)
                 genv = r.collect_genv()
                 genv['current_hostname'] = self.current_hostname
-                print('*'*80)
-                print('apache_wsgi_scriptalias:', genv.apache_wsgi_scriptalias)
-                print('apache_auth_basic_authuserfile:', self.env.auth_basic_authuserfile)
-                r.env.auth_basic_authuserfile = r.format(self.env.auth_basic_authuserfile)
                 fn = self.render_to_file(
                     self.env.site_template,
                     extra=genv,
@@ -649,6 +662,6 @@ class ApacheSatchel(ServiceSatchel):
         self.configure_site(full=1, site=ALL)
         self.install_auth_basic_user_file(site=ALL)
         self.sync_media()
-        #self.install_ssl(site=ALL)
+        self.install_ssl(site=ALL)
 
 apache = ApacheSatchel()

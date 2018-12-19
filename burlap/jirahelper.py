@@ -164,14 +164,13 @@ class JiraHelperSatchel(ContainerSatchel):
                     new_assignee = self.env.assignee_by_status.get(
                         #issue.fields.status.name.title(),
                         next_transition_name,
-                        issue.fields.assignee.name,
+                        issue.fields.assignee.name if issue.fields.assignee else None,
                     )
-                    if new_assignee == 'reporter':
+                    if new_assignee == 'reporter' and issue.fields.reporter:
                         new_assignee = issue.fields.reporter.name
-    #                 print('new_assignee:', new_assignee)
+                    self.vprint('new_assignee:', new_assignee)
 
-                    print('Updating ticket %s to status %s (%s) and assigning it to %s.' \
-                        % (ticket, next_transition_name, next_transition_id, new_assignee))
+                    print('Updating ticket %s to status %s (%s) and assigning it to %s.' % (ticket, next_transition_name, next_transition_id, new_assignee))
                     if not self.dryrun:
 
                         if next_transition_id:
@@ -179,8 +178,7 @@ class JiraHelperSatchel(ContainerSatchel):
                                 jira.transition_issue(issue, next_transition_id)
                                 recheck = True
                             except AttributeError as e:
-                                print('Unable to transition ticket %s to %s: %s' \
-                                    % (ticket, next_transition_name, e), file=sys.stderr)
+                                print('Unable to transition ticket %s to %s: %s' % (ticket, next_transition_name, e), file=sys.stderr)
                                 traceback.print_exc()
 
                         # Note assignment should happen after transition, since the assignment may
@@ -192,12 +190,10 @@ class JiraHelperSatchel(ContainerSatchel):
                             else:
                                 print('No new assignee found.')
                         except JIRAError as e:
-                            print('Unable to reassign ticket %s to %s: %s' \
-                                % (ticket, new_assignee, e), file=sys.stderr)
+                            print('Unable to reassign ticket %s to %s: %s' % (ticket, new_assignee, e), file=sys.stderr)
                 else:
                     recheck = False
-                    print('No transitions found for ticket %s currently in status "%s".' \
-                        % (ticket, issue.fields.status.name))
+                    print('No transitions found for ticket %s currently in status "%s".' % (ticket, issue.fields.status.name))
 
                 if not recheck:
                     break

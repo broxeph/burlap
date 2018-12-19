@@ -638,7 +638,6 @@ class DjangoSatchel(Satchel):
         #site = site or self.genv.SITE
         site = site or ALL
         databases = self.iter_unique_databases(site=site)
-#         print('databases:', databases)
         for _site, site_data in databases:
             self.vprint('-'*80, file=sys.stderr)
             self.vprint('site:', _site, file=sys.stderr)
