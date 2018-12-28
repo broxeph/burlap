@@ -149,8 +149,8 @@ class PostgreSQLSatchel(DatabaseSatchel):
         self.env.dump_fn_template = '{dump_dest_dir}/db_{db_type}_{SITE}_{ROLE}_{db_name}_$(date +%Y%m%d).sql.gz'
 
         #self.env.load_command = 'gunzip < {remote_dump_fn} | pg_restore --jobs=8 -U {db_root_username} --format=c --create --dbname={db_name}'
-        self.env.load_command = "gunzip < {remote_dump_fn} | " \
-            "pg_restore -U {db_root_username} --host={db_host} --format=c --clean --if-exists --dbname={db_name}"
+        self.env.load_command = 'gunzip < {remote_dump_fn} | ' \
+            'pg_restore -U {db_root_username} --host={db_host} --format=c --clean --if-exists --dbname={db_name}'
 
         self.env.createlangs = ['plpgsql'] # plpythonu
         self.env.postgres_user = 'postgres'
