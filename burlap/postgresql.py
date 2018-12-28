@@ -136,7 +136,7 @@ class PostgreSQLSatchel(DatabaseSatchel):
             (UBUNTU, '12.04'): ['postgresql-9.1'],
             (UBUNTU, '14.04'): ['postgresql-9.3'],
             #(UBUNTU, '16.04'): ['postgresql-9.5'],
-            (UBUNTU, '16.04'): ['postgresql-9.6'],
+            (UBUNTU, '16.04'): ['postgresql-10'],
         }
 
     def set_defaults(self):
@@ -149,8 +149,10 @@ class PostgreSQLSatchel(DatabaseSatchel):
         self.env.dump_fn_template = '{dump_dest_dir}/db_{db_type}_{SITE}_{ROLE}_{db_name}_$(date +%Y%m%d).sql.gz'
 
         #self.env.load_command = 'gunzip < {remote_dump_fn} | pg_restore --jobs=8 -U {db_root_username} --format=c --create --dbname={db_name}'
-        self.env.load_command = 'gunzip < {remote_dump_fn} | ' \
-            'pg_restore -U {db_root_username} --host={db_host} --format=c --create --clean --if-exists --dbname={db_name}'
+        # self.env.load_command = 'gunzip < {remote_dump_fn} | ' \
+            # 'pg_restore -U {db_root_username} --host={db_host} --format=c --create --clean --if-exists --dbname={db_name}'
+        self.env.load_command = "gunzip < {remote_dump_fn} | " \
+            "pg_restore -U {db_root_username} --host={db_host} --format=c --clean --if-exists --dbname={db_name}"
 
         self.env.createlangs = ['plpgsql'] # plpythonu
         self.env.postgres_user = 'postgres'
@@ -161,7 +163,7 @@ class PostgreSQLSatchel(DatabaseSatchel):
         self.env.pgpass_path = '~/.pgpass'
         self.env.pgpass_chmod = 600
         self.env.force_version = None
-        self.env.version_command = '`psql --version | grep -o -E "[0-9]+.[0-9]+"`'
+        self.env.version_command = '`psql --version | grep -m 1 -o -E "[0-9]+\.[0-9]+" | head -1`'
         self.env.engine = POSTGRESQL # 'postgresql' | postgis
 
         self.env.db_root_username = 'postgres'
@@ -600,9 +602,8 @@ class PostgreSQLClientSatchel(Satchel):
                 #'postgresql-server-dev-9.3',
             ],
             (UBUNTU, '16.04'): [
-                'postgresql-client-9.6',
-                #'python-psycopg2',#install from pip instead
-                #'postgresql-server-dev-9.3',
+                'postgresql-client-10',
+                #'postgresql-server-dev-10',
             ],
         }
 
