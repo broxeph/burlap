@@ -494,7 +494,13 @@ class PostgreSQLSatchel(DatabaseSatchel):
             v = r.env.version_command
         else:
             v = (r.run('echo {version_command}') or '').strip()
-        print(v)
+        print('postgresql version:', v)
+
+        # Postgres 10+ doesn't use minor version in /etc/postgresql/ subdirectory names
+        if not v.startswith('9'):
+            v = v.split('.')[0]
+
+        print('postgresql subdirectory version:', v)
         return v
 
     @task
