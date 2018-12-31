@@ -161,7 +161,7 @@ class PostgreSQLSatchel(DatabaseSatchel):
         self.env.pgpass_path = '~/.pgpass'
         self.env.pgpass_chmod = 600
         self.env.force_version = None
-        self.env.version_command = '`psql --version | grep -m 1 -o -E "[0-9]+\.[0-9]+" | head -1`'
+        self.env.version_command = r'`psql --version | grep -m 1 -o -E "[0-9]+\.[0-9]+" | head -1`'
         self.env.engine = POSTGRESQL # 'postgresql' | postgis
 
         self.env.db_root_username = 'postgres'
