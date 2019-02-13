@@ -10,15 +10,7 @@ os.environ['BURLAP_NO_LOAD'] = '1'
 
 import burlap # pylint: disable=wrong-import-position
 
-try:
-    # Requires both pip and apt packages:
-    #   pip install pypandoc
-    #   sudo apt-get install pandoc
-    from pypandoc import convert
-    read_md = lambda f: convert(f, 'rst')
-except ImportError:
-    print('warning: pypandoc module not found, could not convert Markdown to RST')
-    read_md = lambda f: open(f, 'r').read()
+read_md = lambda f: open(f, 'r').read()
 
 CURRENT_DIR = os.path.abspath(os.path.dirname(__file__))
 
