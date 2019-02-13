@@ -63,6 +63,7 @@ setup(
     author_email="chrisspen@gmail.com",
     description="Fabric commands for simplifying server deployments",
     long_description=read_md('README.md'),
+    long_description_content_type='text/markdown',
     license="MIT",
     url="https://github.com/chrisspen/burlap",
     #https://pypi.python.org/pypi?%3Aaction=list_classifiers
