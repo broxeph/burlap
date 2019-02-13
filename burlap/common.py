@@ -2579,31 +2579,17 @@ def render_to_string(template, extra=None):
     """
     Renders the given template to a string.
     """
-    #import django
-    #from django.template import Context, Template
-    #from django.template.loader import render_to_string
     from jinja2 import Template
-
     extra = extra or {}
-
     final_fqfn = find_template(template)
     assert final_fqfn, 'Template not found: %s' % template
-    #from django.conf import settings
-#     try:
-#         settings.configure()
-#     except RuntimeError:
-#         pass
-
-    #content = render_to_string('template.txt', dict(env=env))
     template_content = open(final_fqfn, 'r').read()
     t = Template(template_content)
-    #c = Context(env)
     if extra:
         context = env.copy()
         context.update(extra)
     else:
         context = env
-    # print('context:', context)
     rendered_content = t.render(**context)
     rendered_content = rendered_content.replace('&quot;', '"')
     return rendered_content
@@ -2615,16 +2601,12 @@ def render_to_file(template, fn=None, extra=None, **kwargs):
     """
     import tempfile
     dryrun = get_dryrun(kwargs.get('dryrun'))
-#     replace_homedir = kwargs.pop('replace_homedir', False)
     append_newline = kwargs.pop('append_newline', True)
     style = kwargs.pop('style', 'cat') # |echo
     formatter = kwargs.pop('formatter', None)
-    #pprint(extra, indent=4)
     content = render_to_string(template, extra=extra)
     if append_newline and not content.endswith('\n'):
         content += '\n'
-#     if env.user:
-#         content = content.replace('~', '/home/%s' % env.user)
 
     if formatter and callable(formatter):
         content = formatter(content)
@@ -2660,7 +2642,7 @@ def render_to_file(template, fn=None, extra=None, **kwargs):
 
 def install_config(local_path=None, remote_path=None, render=True, extra=None, formatter=None):
     """
-    Returns a template to a remove file.
+    Returns a template to a remote file.
     If no filename given, a temporary filename will be generated and returned.
     """
     local_path = find_template(local_path)

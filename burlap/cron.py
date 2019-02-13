@@ -35,6 +35,7 @@ class CronSatchel(ServiceSatchel):
         self.env.stdout_log_template = r'/var/log/cron-{SITE}-stdout.log'
         self.env.stderr_log_template = r'/var/log/cron-{SITE}-stderr.log'
         self.env.crontabs_selected = [] # [name]
+        self.env.logrotate_templates = [] # [(template_fn, remote_path)]
 
         self.env.service_commands = {
             START:{
@@ -71,11 +72,23 @@ class CronSatchel(ServiceSatchel):
         r.env.cron_stdout_log = r.format(r.env.stdout_log_template)
         r.env.cron_stderr_log = r.format(r.env.stderr_log_template)
 
+    @task
+    def deploy_logrotate(self):
+        r = self.local_renderer
+        for template_fn, remote_path in r.env.logrotate_templates:
+            r.env.remote_path = remote_path
+            r.install_config(local_path=template_fn, remote_path=remote_path)
+            r.sudo('chown root:root {remote_path}')
+            r.sudo('chmod 600 {remote_path}')
+            r.sudo('logrotate {remote_path} --verbose')
+
     def deploy(self, site=None):
         """
         Writes entire crontab to the host.
         """
         r = self.local_renderer
+
+        self.deploy_logrotate()
 
         cron_crontabs = []
 #         if self.verbose:
