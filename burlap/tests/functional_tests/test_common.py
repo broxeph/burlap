@@ -33,7 +33,7 @@ class CommonTests(TestCase):
         all_users = run_or_dryrun('cut -d: -f1 /etc/passwd')
         print('all users:', all_users)
 
-        ret = sudo_or_dryrun('whoami')
+        ret = (sudo_or_dryrun('whoami') or '').split('\n')[-1]
         print('ret0:', ret)
         self.assertEqual(ret, 'root')
 
@@ -41,6 +41,6 @@ class CommonTests(TestCase):
             target_user = 'travis'
         else:
             target_user = 'www-data'
-        ret = sudo_or_dryrun('whoami', user=target_user)
+        ret = (sudo_or_dryrun('whoami', user=target_user) or '').split('\n')[-1]
         print('ret1:', ret)
         self.assertEqual(ret, target_user)
