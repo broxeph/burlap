@@ -4,12 +4,10 @@ import sys
 import socket
 from pprint import pprint
 from functools import partial
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
 
 import yaml
+
+import six
 
 from fabric.api import execute, get
 
@@ -155,7 +153,7 @@ class DeploySatchel(ContainerSatchel):
         tp_fn = self.manifest_filename
         tp_text = None
         if self.file_exists(tp_fn):
-            fd = StringIO()
+            fd = six.BytesIO()
             get(tp_fn, fd)
             tp_text = fd.getvalue()
             manifest_data = {}

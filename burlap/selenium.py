@@ -6,6 +6,8 @@ http://www.lavrsen.dk/foswiki/bin/view/Motion/WebHome
 from __future__ import print_function
 import re
 
+import feedparser
+
 from burlap import Satchel
 from burlap.constants import *
 from burlap.decorators import task
@@ -86,7 +88,6 @@ class SeleniumSatchel(Satchel):
 
     @task
     def get_most_recent_version(self):
-        import feedparser
         link = feedparser.parse(self.env.geckodriver_feed)['entries'][0]['link']
         self.vprint('link:', link)
         matches = re.findall(r'v([0-9]+.[0-9]+.[0-9]+)', link)
@@ -100,8 +101,11 @@ class SeleniumSatchel(Satchel):
         """
         Retrieves the version number from the latest tagged release.
         """
-        import feedparser
-        latest_url = feedparser.parse(self.env.geckodriver_feed)['entries'][0]['link']
+        data = feedparser.parse(self.env.geckodriver_feed)
+        from pprint import pprint
+        print('feedparser for %s' % self.env.geckodriver_feed)
+        pprint(data, indent=4)
+        latest_url = data['entries'][0]['link']
         self.vprint('latest_url:', latest_url)
         version = latest_url.split('/')[-1][1:]
         self.vprint('version:', version)
