@@ -15,10 +15,7 @@ import unittest
 import getpass
 from pprint import pprint
 
-# try:
-#     import pytest
-# except ImportError:
-#     pass
+import six
 
 from burlap import load_yaml_settings
 from burlap.common import CMD_VAR_REGEX, CMD_ESCAPED_VAR_REGEX, shellquote, all_satchels, Satchel, env, get_satchel, clear_state, save_env, env
@@ -208,10 +205,10 @@ set_by_include3: 'some special setting'
         assert set(_ for _ in env0 if not _.startswith('_')) == set(_ for _ in env if not _.startswith('_'))
 
         site_iter = test.iter_sites()
-        site_iter.next()
+        six.next(site_iter)
         print('env.SITE:', env.SITE)
         assert env.SITE == 'site1'
-        site_iter.next()
+        six.next(site_iter)
         print('env.SITE:', env.SITE)
         assert env.SITE == 'site2'
 

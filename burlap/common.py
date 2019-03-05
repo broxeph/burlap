@@ -22,6 +22,7 @@ from pprint import pprint
 #from datetime import date
 
 import yaml
+
 import six
 
 from fabric.api import (
@@ -336,7 +337,7 @@ def str_to_list(s):
         return []
     elif isinstance(s, (tuple, list)):
         return s
-    elif not isinstance(s, basestring):
+    elif not isinstance(s, six.string_types):
         raise NotImplementedError('Unknown type: %s' % type(s))
     return [_.strip().lower() for _ in (s or '').split(',') if _.strip()]
 
@@ -507,27 +508,20 @@ def format(s, lenv, genv, prefix=None, ignored_variables=None): # pylint: disabl
             (k, str(uuid.uuid4()))
             for k in CMD_ESCAPED_VAR_REGEX.findall(s)
         )
-        for k, v in escaped_var_names.iteritems():
+        for k, v in escaped_var_names.items():
             s = s.replace(k, v)
-
-#         if verbose:
-#             print('var_values:')
-#             pprint(var_values, indent=4)
 
         for _vn in ignored_variables:
             # We can't escape ignroed variables this way, because the variables may use Python ":" operator,
             # conflicting with curly brace string interpolation.
-            #var_values[_vn] = '{%s}' % _vn
             k = '{%s}' % _vn
             v = str(uuid.uuid4())
             escaped_var_names[k] = v
             s = s.replace(k, v)
 
-#         print('var_values:', var_values)
-#         print('s:', s)
         s = s.format(**var_values)
 
-        for k, v in escaped_var_names.iteritems():
+        for k, v in escaped_var_names.items():
             s = s.replace(v, k)
 
     s = s.replace(r'\{', '{')
@@ -868,7 +862,7 @@ class Satchel(object):
         Removes this satchel from global registeries.
         """
 
-        for k in env.keys():
+        for k in list(env.keys()):
             if k.startswith(self.env_prefix):
                 del env[k]
 
@@ -1163,7 +1157,7 @@ class Satchel(object):
         # Remove local namespace settings from the global namespace
         # by converting <satchel_name>_<variable_name> to <variable_name>.
         local_ns = {}
-        for k, v in site_data.items():
+        for k, v in list(site_data.items()):
             if k.startswith(self.name + '_'):
                 _k = k[len(self.name + '_'):]
                 local_ns[_k] = v
@@ -1386,6 +1380,7 @@ class Satchel(object):
     def get_trackers(self):
         return []
 
+    @task
     def record_manifest(self):
         """
         Returns a dictionary representing a serialized state of the service.
@@ -1410,6 +1405,9 @@ class Satchel(object):
 
         for tracker in self.get_trackers():
             manifest['_tracker_%s' % tracker.get_natural_key_hash()] = tracker.get_thumbprint()
+
+        if self.verbose:
+            pprint(manifest, indent=4)
 
         return manifest
 
@@ -2229,7 +2227,7 @@ def get_last_modified_timestamp(path, ignore=None):
     Recursively finds the most recent timestamp in the given directory.
     """
     ignore = ignore or []
-    if not isinstance(path, basestring):
+    if not isinstance(path, six.string_types):
         return
     ignore_str = ''
     if ignore:
@@ -2322,7 +2320,7 @@ def to_dict(obj):
         return [to_dict(_) for _ in obj]
     elif isinstance(obj, dict):
         return dict((to_dict(k), to_dict(v)) for k, v in six.iteritems(obj))
-    elif isinstance(obj, (int, bool, float, basestring)):
+    elif isinstance(obj, (int, bool, float, six.string_types)):
         return obj
     elif hasattr(obj, 'to_dict'):
         return obj.to_dict()
@@ -2363,7 +2361,7 @@ class QueuedCommand(object):
         for k, v in six.iteritems(self.kwargs):
             if isinstance(v, bool):
                 kwargs.append('%s=%i' % (k, int(v)))
-            elif isinstance(v, basestring) and '=' in v:
+            elif isinstance(v, six.string_types) and '=' in v:
                 # Escape equals sign character in parameter values.
                 kwargs.append('%s="%s"' % (k, v.replace('=', r'\=')))
             else:

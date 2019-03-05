@@ -367,7 +367,7 @@ class HostnameSatchel(Satchel):
                 yield _data.ip, _hostname#_data.public_dns_name
         else:
             self.vprint('using default')
-            for ip, hostname in self.env.hostnames.iteritems():
+            for ip, hostname in self.env.hostnames.items():
                 self.vprint('ip lookup:', ip, hostname)
                 if ip == UNKNOWN:
                     ip = self.hostname_to_ip(hostname)

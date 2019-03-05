@@ -4,22 +4,40 @@ import os
 import shutil
 import getpass
 
-from fabric.contrib.files import append
+# from fabric.contrib.files import append
 from fabric.api import settings
 
 import burlap
-from burlap.common import env
+from burlap.common import env, Satchel
 from burlap.tests.base import TestCase
 from burlap.project import project
 from burlap.context import set_cwd
 from burlap.deploy import STORAGE_LOCAL
 
+
+class _TestSatchel(Satchel):
+
+    name = 'test'
+
+    def configure(self):
+        pass
+
+
 class ApacheTests(TestCase):
+
+    def get_test_satchel(self):
+        test = _TestSatchel()
+        test.genv.hosts = ['localhost']
+        test.genv.host_string = test.genv.hosts[0]
+        return test
 
     def test_diff(self):
         """
         Confirm on a multi-site multi-host environment, apache correctly reports change.
         """
+
+        test = self.get_test_satchel()
+
         print('Setting paths...')
         #env.plan_storage = STORAGE_LOCAL
         env.disable_known_hosts = True
@@ -51,11 +69,25 @@ class ApacheTests(TestCase):
             env.host_string = 'localhost'
             env.hosts = [env.host_string]
             env.user = getpass.getuser()
+            hosts_updated = False
             with settings(warn_only=True):
-                for use_sudo in (False, True):
-                    ret = append(filename='/etc/hosts', text='127.0.0.1 test-dj-migrate-1\n127.0.0.1 test-dj-migrate-2', use_sudo=use_sudo)
-                    if ret is None:
-                        break
+                output = test.run('cat /etc/hosts')
+                if 'test-dj-migrate-1' not in output:
+                    for use_sudo in (False, True):
+                        print('Attempting to append to /etc/hosts with use_sudo=%s...' % use_sudo)
+                        #ret = append(filename='/etc/hosts', text='127.0.0.1 test-dj-migrate-1\n127.0.0.1 test-dj-migrate-2', use_sudo=use_sudo)
+                        ret = test.append(filename='/etc/hosts', text='127.0.0.1 test-dj-migrate-1\n127.0.0.1 test-dj-migrate-2', use_sudo=use_sudo)
+                        print('ret:', ret)
+                        print('Checking /etc/hosts content...')
+                        output = test.run('cat /etc/hosts')
+                        print('output:', output)
+                        if 'test-dj-migrate-1' in output:
+                            hosts_updated = True
+                            print('Success!')
+                            break
+                else:
+                    hosts_updated = True
+            assert hosts_updated
 
             os.system('ln -s %s %s/' % (burlap_dir, d))
 
@@ -105,6 +137,7 @@ class ApacheTests(TestCase):
                 activate_cmd=activate_cmd,
             )
             status, output = self.getstatusoutput('{activate_cmd} fab prod deploy.preview'.format(**kwargs))
+            print('output:\n%s' % output)
             assert not status
             # The deployment preview should include both hosts.
             assert "[test-dj-migrate-1] Executing task 'deploy.preview'" in output

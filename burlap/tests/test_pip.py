@@ -2,7 +2,10 @@ from __future__ import print_function
 
 import os
 import shutil
-from commands import getoutput
+try:
+    from commands import getoutput
+except ImportError:
+    from subprocess import getoutput
 
 from burlap.constants import *
 from burlap.common import get_satchel

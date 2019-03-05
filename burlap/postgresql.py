@@ -11,6 +11,8 @@ import os
 
 from fabric.api import cd, hide, sudo, settings#, runs_once
 
+import six
+
 from burlap import Satchel
 from burlap.constants import *
 from burlap.db import DatabaseSatchel
@@ -362,7 +364,7 @@ class PostgreSQLSatchel(DatabaseSatchel):
             ret = r.run('psql --user={postgres_user} --no-password --command="'
                 'CREATE DATABASE {db_name} WITH OWNER={db_user} ENCODING=\'{encoding}\' LC_CTYPE=\'{locale}\' LC_COLLATE=\'{locale}\''
             '"')
-        if isinstance(ret, basestring) and 'ERROR:' in ret and 'already exists' not in ret:
+        if isinstance(ret, six.string_types) and 'ERROR:' in ret and 'already exists' not in ret:
             raise Exception('Error creating database: %s' % ret)
 
         with settings(warn_only=True):

@@ -1,3 +1,5 @@
+from __future__ import with_statement
+
 import hashlib
 
 from fabric.api import hide, run, settings
@@ -10,7 +12,7 @@ class Md5Tests(TestCase):
     def test_md5sum_empty_file(self):
         try:
             run('touch f1')
-            expected_hash = hashlib.md5('').hexdigest()
+            expected_hash = hashlib.md5(''.encode('utf-8')).hexdigest()
             assert burlap.files.file.md5sum('f1') == expected_hash
         finally:
             run('rm -f f1')
@@ -18,7 +20,7 @@ class Md5Tests(TestCase):
     def test_md5sum(self):
         try:
             run('echo -n hello > f2')
-            expected_hash = hashlib.md5('hello').hexdigest()
+            expected_hash = hashlib.md5('hello'.encode('utf-8')).hexdigest()
             assert burlap.files.file.md5sum('f2') == expected_hash
         finally:
             run('rm -f f2')

@@ -21,7 +21,7 @@ def show(keyword=''):
     keyword = keyword.strip().lower()
     max_len = max(len(k) for k in env.iterkeys())
     keyword_found = False
-    for k in sorted(env.iterkeys()):
+    for k in sorted(env.keys()):
         if keyword and keyword not in k.lower():
             continue
         keyword_found = True
@@ -43,7 +43,7 @@ def record_manifest():
     # Record settings.
     data['settings'] = dict(
         (k, v)
-        for k, v in env.iteritems()
+        for k, v in env.items()
         if not isinstance(v, types.GeneratorType) and k.strip() and not k.startswith('_') and not callable(v)
     )
     # Record tarball hash.

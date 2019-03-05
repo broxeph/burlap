@@ -3,12 +3,14 @@ from __future__ import print_function
 import os
 import sys
 import unittest
-from commands import getstatusoutput
-# from pprint import pprint
+try:
+    from commands import getstatusoutput
+except ImportError:
+    from subprocess import getstatusoutput
 
 from burlap.common import set_state, get_state, clear_state, init_env, default_env, env, all_satchels, get_dryrun, set_dryrun, get_verbose, set_verbose, \
     is_callable
-#from burlap.deploy import init_env as deploy_init_env, delete_plan_data_dir, clear_fs_cache
+
 
 def clear_runs_once(func):
     if hasattr(func, 'return_value'):
@@ -27,6 +29,7 @@ def clear_runs_once(func):
         except AttributeError:
             pass
         assert not hasattr(func, 'return_value'), 'Unable to clear runs_once on %s' % func
+
 
 class TestCase(unittest.TestCase):
 
@@ -49,7 +52,7 @@ class TestCase(unittest.TestCase):
 
     def clear_env(self):
         keep_env_keys = set(self.get_keep_env_keys())
-        for k, v in env.items():
+        for k, v in list(env.items()):
             if k in keep_env_keys:
                 continue
             del env[k]
@@ -66,7 +69,8 @@ class TestCase(unittest.TestCase):
         from burlap.deploy import deploy as deploy_satchel
 
         # Always print the current test name before the test.
-        rows, columns = map(int, os.popen('stty size', 'r').read().split())
+        # _, columns = map(int, os.popen('stty size', 'r').read().split()) # TODO:fix? broke in Ubuntu16+Python3
+        columns = 80
         kwargs = dict(
             bar='#'*columns,
             name=self._testMethodName,

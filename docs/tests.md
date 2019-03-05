@@ -1,6 +1,18 @@
 Tests
 =====
 
+## Sudo
+
+Some of the tests use sudo and therefore require the user they're running as not require a sudo password.
+
+If you're running the tests locally as your current user, disable the password prompt with:
+
+    export EDITOR=nano && sudo -E visudo
+
+And then place at end of file:
+
+    yourusername   ALL=(ALL) NOPASSWD: ALL
+
 ## Using tox
 
 The preferred way to run tests is to use `tox <https://tox.readthedocs.org/en/latest/>`_.
@@ -96,6 +108,10 @@ only, against both Ubuntu 12.04 and 14.04 boxes ::
 To run the unit tests only, you can use the ``none`` target:
 
     $ tox -e py26-none,py27-none
+
+# Call a specific test:
+
+    $ tox  -c tox-full.ini -e py27-ubuntu_16_04_64 -- -s burlap/tests/functional_tests/test_md5.py::Md5Tests::test_md5sum
 
 # Using a specific Vagrant box
 

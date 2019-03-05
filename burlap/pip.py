@@ -2,6 +2,8 @@ from __future__ import absolute_import, print_function
 
 from pprint import pprint
 
+import six
+
 from burlap.common import Satchel
 from burlap.constants import *
 from burlap.decorators import task
@@ -182,7 +184,7 @@ class PIPSatchel(Satchel):
                 f = self.find_template(f)
                 content.extend(list(iter_lines(f)))
         else:
-            assert isinstance(requirements, basestring)
+            assert isinstance(requirements, six.string_types)
             f = self.find_template(requirements)
             content.extend(list(iter_lines(f)))
 

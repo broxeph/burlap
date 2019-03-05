@@ -2,13 +2,18 @@
 Files and directories
 =====================
 """
-from __future__ import print_function
+from __future__ import print_function, with_statement
 
 from pipes import quote
 import os
 from tempfile import mkstemp
-from urlparse import urlparse
+try:
+    from urlparse import urlparse
+except ImportError:
+    from urllib.parse import urlparse
 import hashlib
+
+import six
 
 from fabric.api import run as _run, sudo as _sudo, abort, warn
 from fabric.api import hide
@@ -66,7 +71,7 @@ class watch(object):
     """
 
     def __init__(self, filenames, callback=None, use_sudo=False):
-        if isinstance(filenames, basestring):
+        if isinstance(filenames, six.string_types):
             self.filenames = [filenames]
         else:
             self.filenames = filenames
@@ -241,8 +246,7 @@ class FileSatchel(ContainerSatchel):
         Compute the MD5 sum of a file.
         """
         func = use_sudo and run_as_root or self.run
-        with self.settings(hide('running', 'stdout', 'stderr', 'warnings'),
-                      warn_only=True):
+        with self.settings(hide('running', 'stdout', 'stderr', 'warnings'), warn_only=True):
             # Linux (LSB)
             if exists(u'/usr/bin/md5sum'):
                 res = func(u'/usr/bin/md5sum %(filename)s' % locals())
@@ -273,6 +277,9 @@ class FileSatchel(ContainerSatchel):
         else:
             warn(res)
             _md5sum = None
+
+        if isinstance(_md5sum, str):
+            _md5sum = _md5sum.strip().split('\n')[-1]
 
         return _md5sum
 
@@ -453,7 +460,7 @@ class FileSatchel(ContainerSatchel):
 
         # Ensure correct mode
         if use_sudo and mode is None:
-            mode = oct(0666 & ~int(self.umask(use_sudo=True), base=8))
+            mode = oct(0o666 & ~int(self.umask(use_sudo=True), base=8))
         if mode and self.get_mode(path, use_sudo) != mode:
             func('chmod %(mode)s "%(path)s"' % locals())
 

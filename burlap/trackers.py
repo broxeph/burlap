@@ -4,7 +4,12 @@ import os
 import hashlib
 import pickle
 from copy import deepcopy
-from commands import getoutput
+try:
+    from commands import getoutput
+except ImportError:
+    from subprocess import getoutput
+
+import six
 
 class BaseTracker(object):
 
@@ -44,6 +49,7 @@ class BaseTracker(object):
         if self.action:
             self.action()
 
+
 class FilesystemTracker(BaseTracker):
     """
     Tracks changes to a local filesystem directory.
@@ -78,6 +84,7 @@ class FilesystemTracker(BaseTracker):
         cmd = 'find ' + self.base_dir + r' -type f \( ' + name_str + r' \) -exec md5sum {} \; | sort -k 2 | md5sum'
         return getoutput(cmd)
 
+
 class SettingsTracker(BaseTracker):
     """
     Tracks changes to one or more satchel settings.
@@ -89,8 +96,7 @@ class SettingsTracker(BaseTracker):
     """
 
     def __init__(self, satchel, names=None, *args, **kwargs):
-        # assert names, 'No setting names specified.'
-        if isinstance(names, basestring):
+        if isinstance(names, six.string_types):
             names = names.replace(',', ' ').split(' ')
         names = names or []
         assert isinstance(names, (tuple, list, set))
@@ -121,6 +127,7 @@ class SettingsTracker(BaseTracker):
         for name in self.names:
             d[name] = deepcopy(self.satchel.env[name])
         return d
+
 
 class ORTracker(BaseTracker):
     """

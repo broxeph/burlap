@@ -12,12 +12,55 @@ from importlib import import_module
 from collections import defaultdict
 from pprint import pprint
 
+import six
 from six import StringIO
 
 from burlap import Satchel
 from burlap.constants import *
 from burlap.decorators import task
 from burlap.common import get_last_modified_timestamp
+from burlap.trackers import BaseTracker
+
+
+class DjangoSettingsTracker(BaseTracker):
+    """
+    Tracks changes to one or more satchel settings.
+
+    Has only two custom parameters:
+
+        names = A list of Django setting names.
+
+    """
+
+    def __init__(self, names, *args, **kwargs):
+        if isinstance(names, six.string_types):
+            names = names.replace(',', ' ').split(' ')
+        names = names or []
+        assert isinstance(names, (tuple, list, set))
+        names = sorted(set(_.strip() for _ in names if _.strip()))
+        super(DjangoSettingsTracker, self).__init__(*args, **kwargs)
+        self.names = names
+
+    @property
+    def names_string(self):
+        return ', '.join(self.names)
+
+    def __repr__(self):
+        return '<%s %s>' % (type(self).__name__, self.names_string)
+
+    def natural_key(self):
+        return (self.names_string,)
+
+    def get_thumbprint(self):
+        """
+        Calculates the current thumbprint of the item being tracked.
+        """
+        d = {}
+        settings = dj.get_settings()
+        for name in self.names:
+            d[name] = getattr(settings, name)
+        return d
+
 
 class DjangoSatchel(Satchel):
 
@@ -199,7 +242,7 @@ class DjangoSatchel(Satchel):
         else:
             r.env.db_type = r.env.db_engine
 
-        for k, v in r.genv.iteritems():
+        for k, v in r.genv.items():
             if not k.startswith(self.name.lower()+'_db_'):
                 continue
             print('db.kv:', k, v)
@@ -367,7 +410,7 @@ class DjangoSatchel(Satchel):
         r.env.args = ' '.join(map(str, args))
         r.env.kwargs = ' '.join(
             ('--%s' % _k if _v in (True, 'True') else '--%s=%s' % (_k, _v))
-            for _k, _v in kwargs.iteritems())
+            for _k, _v in kwargs.items())
         r.env.environs = environs
         if self.is_local:
             r.env.project_dir = r.env.local_project_dir
@@ -442,7 +485,7 @@ class DjangoSatchel(Satchel):
             try:
                 from django.contrib import staticfiles
                 from django.conf import settings as _settings
-                for k, v in settings.__dict__.iteritems():
+                for k, v in settings.__dict__.items():
                     setattr(_settings, k, v)
             except (ImportError, RuntimeError):
                 print('Unable to load settings.')
@@ -462,10 +505,6 @@ class DjangoSatchel(Satchel):
         self.load_django_settings()
         from django.contrib.staticfiles import finders, storage
         for finder in finders.get_finders():
-            #print('finder:', finder)
-            #print('finder.storage:', finder.storage)
-            #for _n, _s in finder.storages.iteritems():
-                #yield _s.location
             for path, _storage in finder.list(ignore_patterns=[]):
                 yield path
 
@@ -606,7 +645,7 @@ class DjangoSatchel(Satchel):
             delete_ghosts = 0
 
         skip_databases = (skip_databases or '')
-        if isinstance(skip_databases, basestring):
+        if isinstance(skip_databases, six.string_types):
             skip_databases = [_.strip() for _ in skip_databases.split(',') if _.strip()]
 
         migrate_apps = migrate_apps or ''

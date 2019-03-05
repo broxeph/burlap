@@ -10,6 +10,8 @@ from __future__ import print_function
 
 from fabric.api import hide, run, settings
 
+import six
+
 from burlap.utils import run_as_root
 
 
@@ -95,9 +97,9 @@ def install(packages, repos=None, yes=None, options=None):
     manager = MANAGER
     if options is None:
         options = []
-    elif isinstance(options, str):
+    elif isinstance(options, six.string_types):
         options = [options]
-    if not isinstance(packages, basestring):
+    if not isinstance(packages, six.string_types):
         packages = " ".join(packages)
     if repos:
         for repo in repos:
@@ -145,9 +147,9 @@ def uninstall(packages, options=None):
     manager = MANAGER
     if options is None:
         options = []
-    elif isinstance(options, str):
+    elif isinstance(options, six.string_types):
         options = [options]
-    if not isinstance(packages, basestring):
+    if not isinstance(packages, six.string_types):
         packages = " ".join(packages)
     options = " ".join(options)
     run_as_root('%(manager)s %(options)s remove %(packages)s' % locals())

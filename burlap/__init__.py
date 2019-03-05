@@ -190,7 +190,7 @@ def update_merge(d, u):
     http://stackoverflow.com/questions/3232943/update-value-of-a-nested-dictionary-of-varying-depth
     """
     import collections
-    for k, v in u.iteritems():
+    for k, v in u.items():
         if isinstance(v, collections.Mapping):
             r = update_merge(d.get(k, dict()), v)
             d[k] = r
@@ -305,9 +305,9 @@ def populate_fabfile():
         return
     try:
         locals_ = fab_frame.f_locals
-        for module_name, module in sub_modules.iteritems():
+        for module_name, module in sub_modules.items():
             locals_[module_name] = module
-        for role_name, role_func in role_commands.iteritems():
+        for role_name, role_func in role_commands.items():
             assert role_name not in sub_modules, \
                 ('The role %s conflicts with a built-in submodule. '
                  'Please choose a different name.') % (role_name)

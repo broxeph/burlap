@@ -2,6 +2,8 @@ from __future__ import print_function
 
 import time
 
+import six
+
 from burlap.constants import *
 from burlap import Satchel
 from burlap.decorators import task
@@ -22,7 +24,7 @@ class CloudfrontSatchel(Satchel):
 
     @task
     def get_or_create_distribution(self, s3_bucket_name):
-        assert isinstance(s3_bucket_name, basestring)
+        assert isinstance(s3_bucket_name, six.string_types)
         boto = get_boto()
         origin_dns = '%s.s3.amazonaws.com' % s3_bucket_name
         if not self.dryrun:

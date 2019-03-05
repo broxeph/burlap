@@ -8,6 +8,8 @@ import time
 
 import yaml
 
+import six
+
 from fabric.api import (
     env,
     require,
@@ -80,7 +82,7 @@ def retrieve_ec2_hosts(extended=0, site=None):
     extended = int(extended)
     if verbose:
         print('site:', site)
-    for host_name, data in list_instances(show=0, verbose=verbose).iteritems():
+    for host_name, data in list_instances(show=0, verbose=verbose).items():
         if verbose:
             print('host_name:', host_name)
             pprint(data, indent=4)
@@ -103,7 +105,7 @@ env.hosts_retrievers[EC2] = retrieve_ec2_hosts
 
 def translate_ec2_hostname(hostname):
     verbose = common.get_verbose()
-    for name, data in list_instances(show=0, verbose=verbose).iteritems():
+    for name, data in list_instances(show=0, verbose=verbose).items():
         if name == hostname:
             return data.public_dns_name
 
@@ -258,7 +260,7 @@ def get_or_create_ec2_security_groups(names=None, verbose=1):
 
     conn = get_ec2_connection()
 
-    if isinstance(names, basestring):
+    if isinstance(names, six.string_types):
         names = names.split(',')
     names = names or env.vm_ec2_selected_security_groups
     if verbose:
@@ -656,5 +658,5 @@ def reboot():
 @runs_once
 def list_ips():
     data = list_instances(show=0, verbose=0)
-    for key, attrs in data.iteritems():
+    for key, attrs in data.items():
         print(attrs.get('ip'), key)

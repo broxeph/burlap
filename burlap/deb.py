@@ -10,6 +10,8 @@ from __future__ import print_function
 
 from fabric.api import hide, run, settings
 
+import six
+
 from burlap.utils import run_as_root
 from burlap.files import file # pylint: disable=redefined-builtin
 
@@ -89,7 +91,7 @@ def install(packages, update=False, options=None, version=None):
         version = ''
     if version and not isinstance(packages, list):
         version = '=' + version
-    if not isinstance(packages, basestring):
+    if not isinstance(packages, six.string_types):
         packages = " ".join(packages)
     options.append("--quiet")
     options.append("--assume-yes")
@@ -111,7 +113,7 @@ def uninstall(packages, purge=False, options=None):
     command = "purge" if purge else "remove"
     if options is None:
         options = []
-    if not isinstance(packages, basestring):
+    if not isinstance(packages, six.string_types):
         packages = " ".join(packages)
     options.append("--assume-yes")
     options = " ".join(options)

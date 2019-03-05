@@ -15,6 +15,8 @@ try:
 except ImportError:
     boto = None
 
+import six
+
 from burlap.constants import *
 from burlap import Satchel
 from burlap.decorators import task
@@ -114,11 +116,9 @@ class S3Satchel(Satchel):
         if not _settings.AWS_STATIC_BUCKET_NAME:
             print('No static media bucket set.')
             return
-        if isinstance(paths, basestring):
+        if isinstance(paths, six.string_types):
             paths = paths.split(',')
         all_paths = map(str.strip, paths)
-    #    assert len(paths) <= 1000, \
-    #        'Cloudfront invalidation request limited to 1000 paths or less.'
         i = 0
         while 1:
             paths = all_paths[i:i+1000]
@@ -135,11 +135,8 @@ class S3Satchel(Satchel):
                     target_dist = dist
                     break
             if not target_dist:
-                raise Exception(('Target distribution %s could not be found '
-                    'in the AWS account.') \
-                        % (settings.AWS_STATIC_BUCKET_NAME,))
-            print('Using distribution %s associated with origin %s.' \
-                % (target_dist.id, _settings.AWS_STATIC_BUCKET_NAME))
+                raise Exception(('Target distribution %s could not be found in the AWS account.') % (settings.AWS_STATIC_BUCKET_NAME,))
+            print('Using distribution %s associated with origin %s.' % (target_dist.id, _settings.AWS_STATIC_BUCKET_NAME))
             inval_req = c.create_invalidation_request(target_dist.id, paths)
             print('Issue invalidation request %s.' % (inval_req,))
             i += 1000

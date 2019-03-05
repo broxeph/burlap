@@ -211,7 +211,7 @@ if __name__ == '__main__':
         total_stale = 0
         total = 0
         for line in csv.DictReader(open(fn), delimiter=','):
-            dep = Dependency(**dict((k, v) for k, v in line.iteritems() if k))
+            dep = Dependency(**dict((k, v) for k, v in line.items() if k))
             total += 1
             is_stale = dep.is_stale()
             total_stale += is_stale if is_stale is not None else 0

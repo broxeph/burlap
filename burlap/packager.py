@@ -4,6 +4,8 @@ import os
 import tempfile
 from pprint import pprint
 
+import six
+
 from burlap import Satchel
 from burlap.constants import *
 from burlap.decorators import task
@@ -191,7 +193,7 @@ class PackagerSatchel(Satchel):
                         'Invalid repo list for satchel %s.' % satchel_name
                     for _name in repo_lst:
                         # Can be string (for APT) or tuple of strings (for APT SOURCE)
-                        if isinstance(_name, basestring):
+                        if isinstance(_name, six.string_types):
                             _name = _name.strip()
                             assert _name, 'Invalid repo name for satchel %s.' % satchel_name
                     repositories.setdefault(repo_type, [])
@@ -226,7 +228,7 @@ class PackagerSatchel(Satchel):
                 r.env.apt_key_value = key_value
                 r.sudo("apt-key adv --keyserver {apt_key_server} --recv-key {apt_key_value}")
             else:
-                assert isinstance(parts, basestring)
+                assert isinstance(parts, six.string_types)
                 r.env.apt_key_url = parts
                 r.sudo('wget {apt_key_url} -O - | apt-key add -')
 
@@ -241,7 +243,7 @@ class PackagerSatchel(Satchel):
                     r.sudo("add-apt-repository -y '{repo_name}'")
                 r.sudo('DEBIAN_FRONTEND=noninteractive apt-get update -yq')
             else:
-                raise NotImplementedError, 'Unsupported repository type: %s' % repo_type
+                raise NotImplementedError('Unsupported repository type: %s' % repo_type)
 
     @task
     def list_required(self, type=None, service=None): # pylint: disable=redefined-builtin
@@ -256,8 +258,7 @@ class PackagerSatchel(Satchel):
         )
         service = (service or '').strip().upper()
         type = (type or '').lower().strip()
-        assert not type or type in PACKAGE_TYPES, \
-            'Unknown package type: %s' % (type,)
+        assert not type or type in PACKAGE_TYPES, 'Unknown package type: %s' % (type,)
         packages_set = set()
         packages = []
         version = self.os_version
@@ -313,11 +314,6 @@ class PackagerSatchel(Satchel):
                 _new.extend(required_ruby_packages.get(
                     _service, {}).get((version.distro, version.release), []))
 
-
-
-    #         if not _new and verbose:
-    #             print(\
-    #                 'Warning: no packages found for service "%s"' % (_service,)
             for _ in _new:
                 if _ in packages_set:
                     continue
@@ -332,10 +328,8 @@ class PackagerSatchel(Satchel):
         version = self.os_version
         all_locale_dicts = {}
         for satchel_name, satchel in self.all_other_enabled_satchels.items():
-#             print('satchel_name:',satchel_name)
             try:
                 locale_dict = satchel.packager_locale.get(version.distro, {})
-#                 print('locale_dict:',locale_dict)
                 for _k, _v in locale_dict.items():
                     assert all_locale_dicts.get(_k, _v) == _v
                     all_locale_dicts[_k] = _v
@@ -366,7 +360,6 @@ class PackagerSatchel(Satchel):
         Installs system packages listed as required by services this host uses.
         """
         r = self.local_renderer
-#         r.pc('Installing required packages.')
         list_only = int(list_only)
         type = (type or '').lower().strip()
         assert not type or type in PACKAGE_TYPES, 'Unknown package type: %s' % (type,)
@@ -423,7 +416,6 @@ class PackagerSatchel(Satchel):
             lm = {'required_packages': lm}
 
         enabled_services = map(str.upper, self.genv.services)
-        #for satchel_name, satchel in self.all_satchels.iteritems():
         for satchel_name, satchel in self.all_other_enabled_satchels.items():
             if hasattr(satchel, 'packager_pre_configure'):
                 satchel.packager_pre_configure()

@@ -34,7 +34,7 @@ To run tests:
 
     [tox](http://tox.readthedocs.org/en/latest/)
     
-    tox -e py27 -- -s burlap/tests/test_project.py::test_project
+    tox -c tox-full.ini -e py27 -- -s burlap/tests/test_project.py::test_project
 
 To run the [documentation server](http://www.mkdocs.org/#getting-started) locally:
 

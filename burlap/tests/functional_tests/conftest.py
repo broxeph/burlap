@@ -37,6 +37,7 @@ def setup_package():
     vagrant_box = (os.environ.get('BURLAP_TEST_BOX') or '').strip()
     print('vagrant_box:', vagrant_box)
     if not vagrant_box:
+        print("Set BURLAP_TEST_BOX to choose a Vagrant base box for functional tests")
         pytest.skip("Set BURLAP_TEST_BOX to choose a Vagrant base box for functional tests")
     elif vagrant_box == 'localhost':
         # Use no VM. This is intended for use on Travis-CI, where we're already running inside a VM.
@@ -73,8 +74,10 @@ def setup_package():
 
 def _check_vagrant_version():
     if VAGRANT_VERSION is None:
+        print("Vagrant is required for functional tests")
         pytest.skip("Vagrant is required for functional tests")
     elif VAGRANT_VERSION < MIN_VAGRANT_VERSION:
+        print("Vagrant >= %s is required for functional tests" % ".".join(map(str, MIN_VAGRANT_VERSION)))
         pytest.skip("Vagrant >= %s is required for functional tests" % ".".join(map(str, MIN_VAGRANT_VERSION)))
 
 

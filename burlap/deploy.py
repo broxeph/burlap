@@ -4,7 +4,10 @@ import sys
 import socket
 from pprint import pprint
 from functools import partial
-from StringIO import StringIO
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 
 import yaml
 
@@ -116,7 +119,7 @@ class DeploySatchel(ContainerSatchel):
         if self.verbose:
             print('deploy.get_current_thumbprint.components:', components)
         manifest_data = {} # {component:data}
-        for component_name, func in sorted(manifest_recorder.iteritems()):
+        for component_name, func in sorted(manifest_recorder.items()):
             self.vprint('Checking thumbprint for component %s...' % component_name)
             manifest_key = assert_valid_satchel(component_name)
             service_name = clean_service_name(component_name)

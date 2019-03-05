@@ -13,11 +13,10 @@ from __future__ import print_function
 import os
 import time
 
-#from fabric.api import hide, settings
+import six
 
 from burlap.constants import *
 from burlap import ServiceSatchel
-#from burlap.utils import run_as_root
 from burlap.decorators import task
 
 # def reload_config():
@@ -185,7 +184,7 @@ class SupervisorSatchel(ServiceSatchel):
         data = super(SupervisorSatchel, self).record_manifest()
 
         # Celery deploys itself through supervisor, so monitor its changes too in Apache site configs.
-        for site_name, site_data in self.genv.sites.iteritems():
+        for site_name, site_data in self.genv.sites.items():
             if self.verbose:
                 print(site_name, site_data)
             data['celery_has_worker_%s' % site_name] = site_data.get('celery_has_worker', False)
@@ -216,7 +215,7 @@ class SupervisorSatchel(ServiceSatchel):
                 print('write_configs.site:', _site)
             for cb in self.genv._supervisor_create_service_callbacks:
                 ret = cb(site=_site)
-                if isinstance(ret, basestring):
+                if isinstance(ret, six.string_types):
                     supervisor_services.append(ret)
                 elif isinstance(ret, tuple):
                     assert len(ret) == 2
@@ -274,7 +273,7 @@ class SupervisorSatchel(ServiceSatchel):
                 ret = cb(site=_site)
                 if self.verbose:
                     print('ret:', ret)
-                if isinstance(ret, basestring):
+                if isinstance(ret, six.string_types):
                     supervisor_services.append(ret)
                 elif isinstance(ret, tuple):
                     assert len(ret) == 2
@@ -300,10 +299,6 @@ class SupervisorSatchel(ServiceSatchel):
     @task(precursors=['packager', 'user', 'rabbitmq'])
     def configure(self, **kwargs):
         kwargs.setdefault('site', ALL)
-
-#         last_manifest = supervisor_satchel.last_manifest
-#         if not last_manifest or not last_manifest.get('configured'):
-#             configure()
 
         self.deploy_services(**kwargs)
 

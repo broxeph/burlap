@@ -3,6 +3,8 @@ from collections import OrderedDict
 
 import yaml
 
+import six
+
 from fabric.api import env
 
 class Shelf(object):
@@ -49,7 +51,7 @@ class Shelf(object):
 
     def set(self, name, value):
         d = self._dict
-        if self.ascii_str and isinstance(value, basestring):
+        if self.ascii_str and isinstance(value, six.string_types):
             value = str(value)
         d[name] = value
         yaml.dump(d, open(self.filename, 'wb'))

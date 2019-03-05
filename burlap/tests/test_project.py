@@ -3,7 +3,10 @@ import os
 import sys
 # import tempfile
 import shutil # pylint: disable=unused-import
-from commands import getstatusoutput
+try:
+    from commands import getstatusoutput
+except ImportError:
+    from subprocess import getstatusoutput
 
 import yaml
 

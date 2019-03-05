@@ -1,4 +1,7 @@
-from commands import getstatusoutput
+try:
+    from commands import getstatusoutput
+except ImportError:
+    from subprocess import getstatusoutput
 
 from burlap.tests.base import TestCase as _TestCase
 from burlap.deploy import deploy as deploy_satchel #thumbprint, clear_fs_cache, delete_plan_data_dir
