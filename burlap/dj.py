@@ -343,7 +343,7 @@ class DjangoSatchel(Satchel):
             paths = list(get_paths('postgresql'))
             run_paths(
                 paths=paths,
-                cmd_template="psql --host={db_host} --user={db_user} -d {db_name} -f {sql_path}")
+                cmd_template="psql --host={db_host} --user={db_user} --no-password -d {db_name} -f {sql_path}")
 
         elif 'mysql' in r.env.db_engine:
             paths = list(get_paths('mysql'))

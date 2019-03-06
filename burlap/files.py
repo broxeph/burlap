@@ -272,14 +272,13 @@ class FileSatchel(ContainerSatchel):
                     abort('No MD5 utility was found on this system.')
 
         if res.succeeded:
-            parts = res.split()
-            _md5sum = parts and parts[0] or None
+            _md5sum = res
         else:
             warn(res)
             _md5sum = None
 
-        if isinstance(_md5sum, str):
-            _md5sum = _md5sum.strip().split('\n')[-1]
+        if isinstance(_md5sum, six.string_types):
+            _md5sum = _md5sum.strip().split('\n')[-1].split()[0]
 
         return _md5sum
 
