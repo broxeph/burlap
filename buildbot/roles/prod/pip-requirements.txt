@@ -1,5 +1,5 @@
 buildbot==0.9.5
 buildbot-console-view==0.9.5
 buildbot-waterfall-view==0.9.5
-buildbot-worker==0.9.5
+buildbot-worker==2.1.0
 buildbot-www==0.9.5
