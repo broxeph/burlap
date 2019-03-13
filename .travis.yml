@@ -1,20 +1,94 @@
 
 language: python
 
+# https://docs.travis-ci.com/user/languages/python/
+#python:
+#-   "2.7"
+#-   "3.3"
+#-   "3.4"
+
 # https://docs.travis-ci.com/user/multi-os/
 # https://docs.travis-ci.com/user/ci-environment/#Virtualization-environments
 matrix:
     include:
+        # Ubuntu 14.04
+        # https://docs.travis-ci.com/user/reference/trusty
+        #-   os: linux
+            #dist: trusty
+            #sudo: required
+            #python: 2.7
         # Ubuntu 16.04
         # https://docs.travis-ci.com/user/reference/xenial
         -   os: linux
             dist: xenial
             sudo: required
             python: 2.7
+        # TODO:Ubuntu 18.04
+        #-   os: linux
+            #dist: bionic
+            #sudo: required
+            #python: 3.7
+
+# https://docs.travis-ci.com/user/hosts
+# Needed by DjTests.test_migrate
+addons:
+    hosts:
+    -   test-dj-migrate-1
+    -   test-dj-migrate-2
+
+env:
+    global:
+    -   BURLAP_TEST_BOX=localhost
+    # Fixes error "/home/travis/.travis/job_stages: line 1: /.travis/functions: No such file or directory"?
+    -   TRAVIS_HOME=/home/travis
+
+install:
+
+# Fixes error "/home/travis/.travis/job_stages: line 1: /.travis/functions: No such file or directory"?
+-   echo -e "export TRAVIS_HOME=/home/travis\n$(cat /home/travis/.travis/job_stages)" > /home/travis/.travis/job_stages
+
+-   sudo apt-key update
+
+# Fix error "Failed to fetch http://dl.google.com/linux/chrome/deb/dists/stable/main/binary-amd64/Packages.gz  Hash Sum mismatch"
+-   sudo apt -yq purge google-chrome*
+-   ls /etc/apt/sources.list.d
+-   sudo rm -Rf /etc/apt/sources.list.d/google-chrome.list || true
+
+-   sudo apt-get -yq update
+-   sudo apt-get -yq purge postgr*
+-   sudo apt-get -yq purge virtualbox*
+# The Oracle Java install routinely times out, and we're not using it, so uninstall it.
+-   sudo apt-get -yq purge oracle-java*
+
+# Fix error "mysql_upgrade: Got error: 2002: Can't connect to local MySQL server through socket '/var/run/mysqld/mysqld.sock' (2) while connecting to the MySQL server"
+# https://bugs.launchpad.net/ubuntu/+source/mysql-5.7/+bug/1605948
+-   sudo systemctl enable mysql
+-   sudo service mysql start
+
+-   sudo apt-get -o Dpkg::Options::="--force-confnew" --allow-downgrades --allow-remove-essential --allow-change-held-packages -fuy --allow-unauthenticated dist-upgrade
+-   sudo apt-get -yq install build-essential
+-   sudo apt-get -yq --allow-downgrades --allow-remove-essential --allow-change-held-packages install linux-headers-`uname -r`
+#-   sudo apt-get -yq install pandoc~
+-   sudo pip install -r requirements-test.txt
+#TODO: Get fab to test fab
+#-  pip install -e .
+# Deal with issue on Travis builders re: multiprocessing.Queue :(
+#-   "sudo rm -rf /dev/shm && sudo ln -s /run/shm /dev/shm"
+#-   "pip install jinja2"
+
+before_script:
+# Allow us to SSH passwordless to localhost
+-   ssh-keygen -f ~/.ssh/id_rsa -N ""
+-   cp ~/.ssh/{id_rsa.pub,authorized_keys}
+# Creation of an SSH agent for testing forwarding
+-   eval $(ssh-agent)
+-   ssh-add
 
 script:
--   cat ~/.travis/job_stages
--   cat /home/travis/.travis/job_stages
--   echo -e "export TRAVIS_HOME=/home/travis\n$(cat /home/travis/.travis/job_stages)" > /home/travis/.travis/job_stages
--   cat ~/.travis/job_stages
--   cat /home/travis/.travis/job_stages
+-   set -e
+-   ./pep8.sh
+#-   tox -c tox-travis.ini -e py27
+#-   tox -c tox-travis.ini -e py36
+-   tox -c tox-travis.ini
+#-   tox -c tox-travis.ini -e py27 -- -s burlap/tests/functional_tests/test_js.py::JSTests::test_jshint
+#-   tox -c tox-travis.ini -e py27 -- -s burlap/tests/functional_tests/test_selenium.py::SeleniumTests
