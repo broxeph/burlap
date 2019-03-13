@@ -184,8 +184,8 @@ class MySQLSatchel(DatabaseSatchel):
     @task
     def assert_mysql_stopped(self):
         with self.settings(warn_only=True):
-            ret = (self.run('ps aux |grep -i mysql|grep -v grep|grep -v vagrant|grep -v python') or '').split('\n')[-1].strip()
-        assert not ret
+            ret = (self.run('ps aux |grep -i mysql|grep -v grep|grep -v vagrant|grep -v python') or '').split('\n')[-1].strip().lower()
+        assert 'mysql' not in ret, 'Invalid output indicates MySQL is still running: %s' % ret
 
     @task
     def set_root_password(self, password=None, method=None, **kwargs):
