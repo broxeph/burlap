@@ -67,3 +67,4 @@ docs/_build/
 /site/
 /*.geany
 /*.out
+/*.bak
