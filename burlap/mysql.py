@@ -179,12 +179,12 @@ class MySQLSatchel(DatabaseSatchel):
 
     @task
     def get_mysql_version(self):
-        return (self.run("dpkg --list | grep -oP '(?<=mysql-server-)([0-9.]+)'") or self.env.assumed_version).split('\n')[0].strip()
+        return (self.run("dpkg --list | grep -oP '(?<=mysql-server-)([0-9.]+)'") or self.env.assumed_version).split('\n')[-1].strip()
 
     @task
     def assert_mysql_stopped(self):
         with self.settings(warn_only=True):
-            ret = (self.run('ps aux |grep -i mysql|grep -v grep|grep -v vagrant|grep -v python') or '').strip()
+            ret = (self.run('ps aux |grep -i mysql|grep -v grep|grep -v vagrant|grep -v python') or '').split('\n')[-1].strip()
         assert not ret
 
     @task
@@ -225,7 +225,7 @@ class MySQLSatchel(DatabaseSatchel):
             for _wait in range(10):
                 r.run('sleep 1')
                 with self.settings(warn_only=True):
-                    ret = (r.run('ps aux|grep -i mysql|grep -v grep|grep -v vagrant') or '').strip()
+                    ret = (r.run('ps aux|grep -i mysql|grep -v grep|grep -v vagrant') or '').split('\n')[-1].strip()
                 if ret:
                     running = True
                     break
