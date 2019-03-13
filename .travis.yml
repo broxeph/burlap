@@ -39,6 +39,7 @@ addons:
 env:
     global:
     -   BURLAP_TEST_BOX=localhost
+    # Fixes error "/home/travis/.travis/job_stages: line 1: /.travis/functions: No such file or directory"?
     -   TRAVIS_HOME=/home/travis
 
 install:
@@ -54,6 +55,12 @@ install:
 -   sudo apt-get -yq purge virtualbox*
 # The Oracle Java install routinely times out, and we're not using it, so uninstall it.
 -   sudo apt-get -yq purge oracle-java*
+
+# Fix error "mysql_upgrade: Got error: 2002: Can't connect to local MySQL server through socket '/var/run/mysqld/mysqld.sock' (2) while connecting to the MySQL server"
+# https://bugs.launchpad.net/ubuntu/+source/mysql-5.7/+bug/1605948
+-   sudo systemctl enable mysql
+-   sudo service mysql start
+
 -   sudo apt-get -o Dpkg::Options::="--force-confnew" --allow-downgrades --allow-remove-essential --allow-change-held-packages -fuy --allow-unauthenticated dist-upgrade
 -   sudo apt-get -yq install build-essential
 -   sudo apt-get -yq --allow-downgrades --allow-remove-essential --allow-change-held-packages install linux-headers-`uname -r`
@@ -64,7 +71,7 @@ install:
 # Deal with issue on Travis builders re: multiprocessing.Queue :(
 #-   "sudo rm -rf /dev/shm && sudo ln -s /run/shm /dev/shm"
 #-   "pip install jinja2"
-  
+
 before_script:
 # Allow us to SSH passwordless to localhost
 -   ssh-keygen -f ~/.ssh/id_rsa -N ""
