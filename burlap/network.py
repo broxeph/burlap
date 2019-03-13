@@ -36,7 +36,7 @@ def address(interface):
 
     """
     with settings(hide('running', 'stdout')):
-        res = sudo("/sbin/ifconfig %(interface)s | grep 'inet '" % locals())
+        res = (sudo("/sbin/ifconfig %(interface)s | grep 'inet '" % locals()) or '').split('\n')[-1].strip()
     if 'addr' in res:
         return res.split()[1].split(':')[1]
     return res.split()[1]
