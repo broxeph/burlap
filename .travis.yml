@@ -47,7 +47,7 @@ install:
 # Fix error "Failed to fetch http://dl.google.com/linux/chrome/deb/dists/stable/main/binary-amd64/Packages.gz  Hash Sum mismatch"
 -   sudo apt -yq purge google-chrome*
 -   ls /etc/apt/sources.list.d
--   sudo bash -c "[ -d /etc/apt/sources.list.d/google-chrome.list ] && rm -Rf /etc/apt/sources.list.d/google-chrome.list"
+-   sudo rm -Rf /etc/apt/sources.list.d/google-chrome.list || true"
 
 -   sudo apt-get -yq update
 -   sudo apt-get -yq purge postgr*
