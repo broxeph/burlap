@@ -27,6 +27,7 @@ addons:
 env:
     global:
     -   BURLAP_TEST_BOX=localhost
+    -   TRAVIS_HOME=/home/travis
 
 install:
 -   sudo apt-key update
