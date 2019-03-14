@@ -2,10 +2,12 @@
 language: python
 
 # https://docs.travis-ci.com/user/languages/python/
-python:
--   "2.7"
--   "3.6"
-#-   "3.7"
+# Note, breaks most of the install commands? Prevents accessing system-level tools and services?
+# Install specific Python versions in the install section instead.
+#python:
+#-   "2.7"
+#-   "3.3"
+#-   "3.4"
 
 # https://docs.travis-ci.com/user/multi-os/
 # https://docs.travis-ci.com/user/ci-environment/#Virtualization-environments
@@ -48,6 +50,8 @@ install:
 # Fixes error "/home/travis/.travis/job_stages: line 1: /.travis/functions: No such file or directory"?
 -   echo -e "export TRAVIS_HOME=/home/travis\n$(cat /home/travis/.travis/job_stages)" > /home/travis/.travis/job_stages
 
+-   sudo add-apt-repository -y ppa:deadsnakes/ppa
+
 -   sudo apt-key update
 
 # Fix error "Failed to fetch http://dl.google.com/linux/chrome/deb/dists/stable/main/binary-amd64/Packages.gz  Hash Sum mismatch"
@@ -56,6 +60,7 @@ install:
 -   sudo rm -Rf /etc/apt/sources.list.d/google-chrome.list || true
 
 -   sudo apt-get -yq update
+-   sudo apt-get -yq install python3.6 python3.6-dev
 -   sudo apt-get -yq purge postgr*
 -   sudo apt-get -yq purge virtualbox*
 # The Oracle Java install routinely times out, and we're not using it, so uninstall it.
