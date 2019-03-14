@@ -74,13 +74,7 @@ install:
 -   sudo apt-get -o Dpkg::Options::="--force-confnew" --allow-downgrades --allow-remove-essential --allow-change-held-packages -fuy --allow-unauthenticated dist-upgrade
 -   sudo apt-get -yq install build-essential
 -   sudo apt-get -yq --allow-downgrades --allow-remove-essential --allow-change-held-packages install linux-headers-`uname -r`
-#-   sudo apt-get -yq install pandoc~
 -   sudo pip install -r requirements-test.txt
-#TODO: Get fab to test fab
-#-  pip install -e .
-# Deal with issue on Travis builders re: multiprocessing.Queue :(
-#-   "sudo rm -rf /dev/shm && sudo ln -s /run/shm /dev/shm"
-#-   "pip install jinja2"
 
 before_script:
 # Allow us to SSH passwordless to localhost
@@ -92,8 +86,8 @@ before_script:
 
 script:
 -   set -e
-#-   ./pep8.sh
-#-   tox -c tox-travis.ini -e py27
+-   ./pep8.sh
+-   tox -c tox-travis.ini -e py27-no_vagrant
 -   tox -c tox-travis.ini -e py36-no_vagrant
 #-   tox -c tox-travis.ini
 #-   tox -c tox-travis.ini -e py27 -- -s burlap/tests/functional_tests/test_js.py::JSTests::test_jshint
