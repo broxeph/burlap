@@ -48,7 +48,7 @@ env:
 install:
 
 # Fixes error "/home/travis/.travis/job_stages: line 1: /.travis/functions: No such file or directory"?
--   echo -e "export TRAVIS_HOME=/home/travis\n$(cat /home/travis/.travis/job_stages)" > /home/travis/.travis/job_stages
+#-   echo -e "export TRAVIS_HOME=/home/travis\n$(cat /home/travis/.travis/job_stages)" > /home/travis/.travis/job_stages
 
 -   sudo add-apt-repository -y ppa:deadsnakes/ppa
 
