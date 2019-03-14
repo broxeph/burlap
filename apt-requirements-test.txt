@@ -4,6 +4,5 @@ qemu
 qemu-kvm
 libvirt-bin
 build-essential
-pandoc
 # Not strictly necessary, but useful for debugging and managing local VM instances.
 virt-manager
