@@ -41,6 +41,7 @@ env:
     -   BURLAP_TEST_BOX=localhost
     # Fixes error "/home/travis/.travis/job_stages: line 1: /.travis/functions: No such file or directory"?
     -   TRAVIS_HOME=/home/travis
+    -   TRAVIS=true
 
 install:
 
