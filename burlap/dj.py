@@ -250,7 +250,7 @@ class DjangoSatchel(Satchel):
         return default_db
 
     @task
-    def install_sql(self, site=None, database='default', apps=None, stop_on_error=0):
+    def install_sql(self, site=None, database='default', apps=None, stop_on_error=0, fn=None):
         """
         Installs all custom SQL.
         """
@@ -258,8 +258,9 @@ class DjangoSatchel(Satchel):
 
         stop_on_error = int(stop_on_error)
 
+        site = site or ALL
+
         name = database
-        self.set_db(name=name, site=site)
 
         r = self.local_renderer
         paths = glob.glob(r.format(r.env.install_sql_path_template))
@@ -281,7 +282,8 @@ class DjangoSatchel(Satchel):
             """
             data = [] # [(path, view_name, content)]
             for path in paths:
-                #print path
+                if fn and fn not in path:
+                    continue
                 parts = path.split('.')
                 if len(parts) == 3 and parts[1] != t:
                     continue
@@ -289,7 +291,6 @@ class DjangoSatchel(Satchel):
                     continue
                 content = open(path, 'r').read()
                 matches = re.findall(r'[\s\t]+VIEW[\s\t]+([a-zA-Z0-9_]{3,})', content, flags=re.IGNORECASE)
-                #assert matches, 'Unable to find view name: %s' % (p,)
                 view_name = ''
                 if matches:
                     view_name = matches[0]
@@ -339,20 +340,24 @@ class DjangoSatchel(Satchel):
         if self.verbose:
             print('install_sql.db_engine:', r.env.db_engine)
 
-        if 'postgres' in r.env.db_engine or 'postgis' in r.env.db_engine:
-            paths = list(get_paths('postgresql'))
-            run_paths(
-                paths=paths,
-                cmd_template="psql --host={db_host} --user={db_user} --no-password -d {db_name} -f {sql_path}")
+        for site, site_data in self.iter_sites(site=site, no_secure=True):
 
-        elif 'mysql' in r.env.db_engine:
-            paths = list(get_paths('mysql'))
-            run_paths(
-                paths=paths,
-                cmd_template="mysql -v -h {db_host} -u {db_user} -p'{db_password}' {db_name} < {sql_path}")
+            self.set_db(name=name, site=site)
 
-        else:
-            raise NotImplementedError
+            if 'postgres' in r.env.db_engine or 'postgis' in r.env.db_engine:
+                paths = list(get_paths('postgresql'))
+                run_paths(
+                    paths=paths,
+                    cmd_template="psql --host={db_host} --user={db_user} --no-password -d {db_name} -f {sql_path}")
+
+            elif 'mysql' in r.env.db_engine:
+                paths = list(get_paths('mysql'))
+                run_paths(
+                    paths=paths,
+                    cmd_template="mysql -v -h {db_host} -u {db_user} -p'{db_password}' {db_name} < {sql_path}")
+
+            else:
+                raise NotImplementedError
 
     @task
     def createsuperuser(self, username='admin', email=None, password=None, site=None):
