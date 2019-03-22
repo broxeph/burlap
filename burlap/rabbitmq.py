@@ -58,6 +58,14 @@ class RabbitMQSatchel(ServiceSatchel):
         self.env.user_lookup_method = None # LOCAL|DJANGO
         self.env.users_vhosts = [] # [(user, password, vhost)]
 
+        self.env.auto_purge_mnesia_enabled = False
+        self.env.auto_purge_mnesia_user = 'root'
+        self.env.auto_purge_mnesia_command_template = 'rabbitmq/purge_mnesia.sh.template'
+        self.env.auto_purge_mnesia_command_path = '/usr/local/bin/purge_mnesia.sh'
+        self.env.auto_purge_mnesia_crontab_template = 'rabbitmq/etc_crond_purge_mnesia.template'
+        self.env.auto_purge_mnesia_crontab_path = '/etc/cron.d/purge_mnesia'
+        self.env.auto_purge_mnesia_cron_schedule = '0 0 * * SAT' # Every Saturday at midnight.
+
         # If true, enables a third-party reposistory to install the most recent version.
         self.env.bleeding = False
 
@@ -226,6 +234,35 @@ class RabbitMQSatchel(ServiceSatchel):
 
         return params
 
+    @task
+    def install_purge_script(self):
+        r = self.local_renderer
+
+        # Install script to perform the actual check.
+        self.install_script(
+            local_path=r.env.auto_purge_mnesia_command_template,
+            remote_path=r.env.auto_purge_mnesia_command_path,
+            render=True,
+            extra=r.collect_genv())
+        r.sudo('chown root:root {auto_purge_mnesia_command_path}')
+
+        # Install crontab to schedule running the script.
+        self.install_script(
+            local_path=r.env.auto_purge_mnesia_crontab_template,
+            remote_path=r.env.auto_purge_mnesia_crontab_path,
+            render=True,
+            extra=r.collect_genv())
+        r.sudo('chown root:root {auto_purge_mnesia_crontab_path}')
+        r.sudo('chmod 600 {auto_purge_mnesia_crontab_path}')
+        r.sudo('service cron restart')
+
+    @task
+    def uninstall_purge_script(self):
+        r = self.local_renderer
+        r.sudo('rm -f {auto_purge_mnesia_command_path}')
+        r.sudo('rm -f {auto_purge_mnesia_crontab_path}')
+        r.sudo('service cron restart')
+
     def _configure(self, site=None, full=0, only_data=0):
         """
         Installs and configures RabbitMQ.
@@ -277,6 +314,11 @@ class RabbitMQSatchel(ServiceSatchel):
     @task(precursors=['packager', 'user'])
     def configure(self, site=None, **kwargs):
         lm = self.last_manifest
+
+        if self.env.auto_purge_mnesia_enabled:
+            self.install_purge_script()
+        elif lm.auto_purge_mnesia_enabled:
+            self.uninstall_purge_script()
 
         if self.env.management_enabled != lm.management_enabled:
             self.enable_management_interface()
