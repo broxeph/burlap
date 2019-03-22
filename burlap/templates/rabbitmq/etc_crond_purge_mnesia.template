@@ -1,0 +1,7 @@
+# /etc/cron.d/purge_mnesia: crontab entries for the RabbitMQ mnesia purger
+
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+# minute hour day month weekday (0-6, 0 = Sunday) user command
+{{ rabbitmq_auto_purge_mnesia_cron_schedule }}  {{ rabbitmq_auto_purge_mnesia_user }} {{ rabbitmq_auto_purge_mnesia_command_path }}

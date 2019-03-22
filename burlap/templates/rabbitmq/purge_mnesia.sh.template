@@ -1,0 +1,9 @@
+#!/bin/bash
+# Deletes everything in RabbitMQ's mnesia directory, in order to stop un-retrieved message results from eventually clogging up the system.
+killall rabbitmq-server
+killall beam.smp
+killall erlang
+rm \-rf /var/lib/rabbitmq/mnesia/
+mkdir /var/lib/rabbitmq/mnesia/
+chown rabbitmq:rabbitmq /var/lib/rabbitmq/mnesia/
+service rabbitmq-server start
