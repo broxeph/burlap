@@ -490,8 +490,13 @@ class DjangoSatchel(Satchel):
             try:
                 from django.contrib import staticfiles
                 from django.conf import settings as _settings
-                for k, v in settings.__dict__.items():
-                    setattr(_settings, k, v)
+
+                # get_settings() doesn't raise ImportError but returns None instead
+                if settings is not None:
+                    for k, v in settings.__dict__.items():
+                        setattr(_settings, k, v)
+                else:
+                    raise ImportError
             except (ImportError, RuntimeError):
                 print('Unable to load settings.')
                 traceback.print_exc()
