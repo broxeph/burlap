@@ -238,6 +238,11 @@ class RabbitMQSatchel(ServiceSatchel):
     def install_purge_script(self):
         r = self.local_renderer
 
+        with self.capture_bash() as capture:
+            self._configure_users()
+
+        r.env.user_script = capture.stdout.getvalue()
+
         # Install script to perform the actual check.
         self.install_script(
             local_path=r.env.auto_purge_mnesia_command_template,
@@ -263,23 +268,18 @@ class RabbitMQSatchel(ServiceSatchel):
         r.sudo('rm -f {auto_purge_mnesia_crontab_path}')
         r.sudo('service cron restart')
 
-    def _configure(self, site=None, full=0, only_data=0):
+    def _configure_users(self, site=None, full=0, only_data=0):
         """
         Installs and configures RabbitMQ.
         """
 
+        site = site or ALL
+
         full = int(full)
 
-    #    assert self.env.erlang_cookie
         if full and not only_data:
             packager = self.get_satchel('packager')
             packager.install_required(type=SYSTEM, service=self.name)
-
-        #render_paths()
-
-#         hostname = get_current_hostname()
-#
-#         target_sites = self.genv.available_sites_by_host.get(hostname, None)
 
         r = self.local_renderer
 
@@ -315,6 +315,8 @@ class RabbitMQSatchel(ServiceSatchel):
     def configure(self, site=None, **kwargs):
         lm = self.last_manifest
 
+        self.configure_bleeding()
+
         if self.env.auto_purge_mnesia_enabled:
             self.install_purge_script()
         elif lm.auto_purge_mnesia_enabled:
@@ -326,9 +328,6 @@ class RabbitMQSatchel(ServiceSatchel):
         if self.env.loopback_users != lm.loopback_users:
             self.set_loopback_users()
 
-        self.configure_bleeding()
-
-        kwargs['site'] = site or ALL
-        return self._configure(**kwargs)
+        return self._configure_users(**kwargs)
 
 rabbitmq = RabbitMQSatchel()

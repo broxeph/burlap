@@ -24,6 +24,7 @@ from pprint import pprint
 import yaml
 
 import six
+from six import StringIO
 
 from fabric.api import (
     env,
@@ -51,6 +52,8 @@ if hasattr(fabric.api, '_run'):
 
 if hasattr(fabric.api, '_sudo'):
     _sudo = fabric.api._sudo
+
+_tmp_BURLAP_COMMAND_PREFIX = None
 
 BURLAP_COMMAND_PREFIX = int(os.environ.get('BURLAP_COMMAND_PREFIX', '1'))
 
@@ -841,6 +844,33 @@ class Satchel(object):
     def new_local_renderer(self):
         self._local_renderer = None
         return self.local_renderer
+
+    def capture_bash(self):
+        """
+        Context manager that hides the command prefix and activates dryrun to capture all following task commands to their equivalent Bash outputs.
+        """
+        class Capture(object):
+
+            def __init__(self, satchel):
+                self.satchel = satchel
+                self._dryrun = self.satchel.dryrun
+                self.satchel.dryrun = 1
+                begincap()
+                self._stdout = sys.stdout
+                self._stderr = sys.stderr
+                self.stdout = sys.stdout = StringIO()
+                self.stderr = sys.stderr = StringIO()
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, type, value, traceback): # pylint: disable=redefined-builtin
+                endcap()
+                self.satchel.dryrun = self._dryrun
+                sys.stdout = self._stdout
+                sys.stderr = self._stderr
+
+        return Capture(self)
 
     def register(self):
         """
@@ -1968,6 +1998,39 @@ def run_or_dryrun(*args, **kwargs):
     else:
         return _run(*args, **kwargs)
 
+
+def begincap():
+    """
+    Prepares the output for Bash capture by clearing the line prefix.
+    """
+    global BURLAP_COMMAND_PREFIX, _tmp_BURLAP_COMMAND_PREFIX
+    _tmp_BURLAP_COMMAND_PREFIX = BURLAP_COMMAND_PREFIX
+    BURLAP_COMMAND_PREFIX = 0
+
+
+def restorecap():
+    """
+    Resets the line prefix setting to whatever it was prior to calling begincap().
+    """
+    global BURLAP_COMMAND_PREFIX
+    BURLAP_COMMAND_PREFIX = _tmp_BURLAP_COMMAND_PREFIX
+
+
+def endcap():
+    """
+    Forcibly ends Bash capture by re-enabling the default line prefix.
+    """
+    global BURLAP_COMMAND_PREFIX
+    BURLAP_COMMAND_PREFIX = 1
+
+
+def escape_double_quotes_in_command(cmd):
+    """
+    Prefixes double-quotes with a backslash, so the command can be placed inside double-quotes for use in a Bash expression.
+    """
+    return re.sub(r'(?<!\\)"', '\\"', cmd)
+
+
 def sudo_or_dryrun(*args, **kwargs):
     dryrun = get_dryrun(kwargs.get('dryrun'))
     user = kwargs.get('user')
@@ -1978,11 +2041,14 @@ def sudo_or_dryrun(*args, **kwargs):
         cmd = args[0]
         if BURLAP_COMMAND_PREFIX:
             if user:
-                print('%s run: sudo -u %s bash -c "%s"' % (render_command_prefix(), user, cmd))
+                print('%s run: sudo -u %s bash -c "%s"' % (render_command_prefix(), user, escape_double_quotes_in_command(cmd)))
             else:
-                print('%s run: sudo bash -c "%s"' % (render_command_prefix(), cmd))
+                print('%s run: sudo bash -c "%s"' % (render_command_prefix(), escape_double_quotes_in_command(cmd)))
         else:
-            print(cmd)
+            if user:
+                print('sudo -u %s bash -c "%s"' % (user, escape_double_quotes_in_command(cmd)))
+            else:
+                print('sudo bash -c "%s"' % (escape_double_quotes_in_command(cmd),))
     else:
         if ignore_errors:
             with settings(warn_only=True):
@@ -2779,7 +2845,6 @@ def get_current_hostname():
 
     if env.host_string not in env[key]:
         with hide('running', 'stdout', 'stderr', 'warnings'):
-            print('Retrieving hostname...')
             if env.host_string in LOCALHOSTS:
                 ret = _local('hostname', capture=True)
             else:
