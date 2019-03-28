@@ -15,3 +15,7 @@ echo "Starting RabbitMQ..."
 service rabbitmq-server start
 echo "Reconfiguring RabbitMQ..."
 {{ rabbitmq_user_script }}
+{% if rabbitmq_auto_purge_mnesia_post_script %}
+echo "Running custom post-script setup..."
+{{ rabbitmq_auto_purge_mnesia_post_script }}
+{% endif %}

@@ -65,6 +65,7 @@ class RabbitMQSatchel(ServiceSatchel):
         self.env.auto_purge_mnesia_crontab_template = 'rabbitmq/etc_crond_purge_mnesia.template'
         self.env.auto_purge_mnesia_crontab_path = '/etc/cron.d/purge_mnesia'
         self.env.auto_purge_mnesia_cron_schedule = '0 0 * * SAT' # Every Saturday at midnight.
+        self.env.auto_purge_mnesia_post_script = None
 
         # If true, enables a third-party reposistory to install the most recent version.
         self.env.bleeding = False
