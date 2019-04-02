@@ -346,7 +346,7 @@ def str_to_list(s):
 
 def assert_valid_satchel(name):
     name = name.strip().upper()
-    assert name in all_satchels
+    assert name in all_satchels, 'Invalid satchel: %s' % name
     return name
 
 def clean_service_name(name):
