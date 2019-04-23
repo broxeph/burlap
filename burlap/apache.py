@@ -149,7 +149,7 @@ class ApacheSatchel(ServiceSatchel):
         self.env.domain_with_sub = None
         self.env.domain_without_sub = None
 
-        self.env.maintenance_template  = 'apache/maintenance.html.template'
+        self.env.maintenance_template = 'apache/maintenance.html.template'
         self.env.maintenance_fn = 'maintenance.html'
         self.env.maintenance_path = '{apache_docroot}/{maintenance_fn}'
 
