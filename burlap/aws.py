@@ -1,8 +1,11 @@
+from __future__ import print_function
+
 import os
 
 from burlap import Satchel
 from burlap.constants import *
 from burlap.decorators import task
+
 
 class EC2MonitorSatchel(Satchel):
     """
@@ -113,4 +116,32 @@ class EC2MonitorSatchel(Satchel):
         """
         self.install()
 
+
 ec2monitor = EC2MonitorSatchel()
+
+
+class RDSSatchel(Satchel):
+
+    name = 'rds'
+
+    def set_defaults(self):
+        pass
+
+    @task
+    def list_instances(self):
+        import boto
+        import boto.rds
+        conn = boto.rds.connect_to_region(
+            self.genv.vm_ec2_region,
+            aws_access_key_id=self.genv.vm_ec2_aws_access_key_id,
+            aws_secret_access_key=self.genv.vm_ec2_aws_secret_access_key,
+        )
+        for value in conn.get_all_dbinstances():
+            print(value, value.engine, value.engine_version)
+
+    @task(precursors=['packager', 'user'])
+    def configure(self):
+        pass
+
+
+rds = RDSSatchel()
