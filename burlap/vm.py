@@ -132,6 +132,8 @@ def get_all_running_ec2_instances():
     instances.reverse()
     return instances
 
+
+
 @task_or_dryrun
 #@runs_once #breaks get_or_create()
 def list_instances(show=1, name=None, group=None, release=None, except_release=None):
@@ -369,6 +371,14 @@ def get_or_create_ec2_key_pair(name=None, verbose=1):
         print('Key pair %s created.' % name)
     #return kp
     return pem_path
+
+@task_or_dryrun
+def list_security_groups():
+    conn = get_ec2_connection()
+    sgs = conn.get_all_security_groups()
+    print('Id,Name,Number of Instances')
+    for sg in sorted(sgs, key=lambda o: o.name):
+        print('%s,%s,%s' % (sg.id, sg.name, len(sg.instances())))
 
 def get_or_create_ec2_instance(name=None, group=None, release=None, verbose=0, backend_opts=None):
     """

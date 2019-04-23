@@ -149,6 +149,10 @@ class ApacheSatchel(ServiceSatchel):
         self.env.domain_with_sub = None
         self.env.domain_without_sub = None
 
+        self.env.maintenance_template  = 'apache/maintenance.html.template'
+        self.env.maintenance_fn = 'maintenance.html'
+        self.env.maintenance_path = '{apache_docroot}/{maintenance_fn}'
+
         self.env.wsgi_enabled = False
         self.env.wsgi_template = 'django/django.template.wsgi'
         self.env.wsgi_python_path = None
@@ -409,14 +413,8 @@ class ApacheSatchel(ServiceSatchel):
         Uploads select media to an Apache accessible directory.
         """
 
-        #from burlap.dj import render_remote_paths
-
         # Ensure a site is selected.
         self.genv.SITE = self.genv.SITE or self.genv.default_site
-
-#         apache.get_apache_settings()
-
-        #render_remote_paths()
 
         r = self.local_renderer
 
@@ -424,8 +422,6 @@ class ApacheSatchel(ServiceSatchel):
         self.vprint('Getting site data for %s...' % self.genv.SITE)
 
         self.set_site_specifics(self.genv.SITE)
-        #site_data = self.genv.sites[self.genv.SITE]
-        #self.genv.update(site_data)
 
         sync_sets = r.env.sync_sets
         if sync_set:
@@ -434,7 +430,6 @@ class ApacheSatchel(ServiceSatchel):
         ret_paths = []
         for _sync_set in sync_sets:
             for paths in r.env.sync_sets[_sync_set]:
-                #print 'paths:',paths
                 r.env.sync_local_path = os.path.abspath(paths['local_path'] % self.genv)
                 if paths['local_path'].endswith('/') and not r.env.sync_local_path.endswith('/'):
                     r.env.sync_local_path += '/'
@@ -451,7 +446,6 @@ class ApacheSatchel(ServiceSatchel):
                 print('Syncing %s to %s...' % (r.env.sync_local_path, r.env.sync_remote_path))
 
                 r.env.tmp_chmod = paths.get('chmod', r.env.chmod)
-                #with settings(warn_only=True):
                 r.sudo('mkdir -p {apache_sync_remote_path}')
                 r.sudo('chmod -R {apache_tmp_chmod} {apache_sync_remote_path}')
                 r.local('rsync -rvz --progress --recursive --no-p --no-g '
@@ -661,6 +655,24 @@ class ApacheSatchel(ServiceSatchel):
                 r.put(local_path=fn, remote_path=r.env.ports_path, use_sudo=True)
 
         r.sudo('chown -R {apache_web_user}:{apache_web_group} {apache_root}')
+
+    @task
+    def maint_up(self):
+        """
+        Forwards all traffic to a page saying the server is down for maintenance.
+        """
+        r = self.local_renderer
+        fn = self.render_to_file(r.env.maintenance_template, extra={'current_hostname': self.current_hostname})
+        r.put(local_path=fn, remote_path=r.env.maintenance_path, use_sudo=True)
+        r.sudo('chown -R {apache_web_user}:{apache_web_group} {maintenance_path}')
+
+    @task
+    def maint_down(self):
+        """
+        Removes down-for-maintenance splash page.
+        """
+        r = self.local_renderer
+        r.sudo('[ -f {maintenance_path} ] && rm -f {maintenance_path} || true')
 
     @task(precursors=['packager', 'user', 'hostname', 'ip'])
     def configure(self):

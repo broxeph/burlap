@@ -1,0 +1,6 @@
+<html>
+<body>
+<h1>Closed for maintenance. Please check back later.</h1>
+<sub>{{ current_hostname }}</sub>
+</body>
+</html>
