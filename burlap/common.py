@@ -21,10 +21,10 @@ from collections import namedtuple, OrderedDict
 from pprint import pprint
 #from datetime import date
 
-import yaml
-
 import six
 from six import StringIO
+
+import yaml
 
 from fabric.api import (
     env,
@@ -504,8 +504,8 @@ def format(s, lenv, genv, prefix=None, ignored_variables=None): # pylint: disabl
                 var_values[var_name] = lenv[var_name[len(prefix+'_'):]]
             else:
                 raise Exception((
-                    'Command references variable "%s" which is not found '
-                    'in either the local or global namespace.') % var_name)
+                    'Command "%s" references variable "%s" which is not found '
+                    'in either the local or global namespace.') % (s, var_name))
 
         escaped_var_names = dict(
             (k, str(uuid.uuid4()))

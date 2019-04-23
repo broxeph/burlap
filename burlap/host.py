@@ -326,6 +326,10 @@ class HostnameSatchel(Satchel):
         # The bash command to run to get our public IP as we appear on the WAN.
         self.env.get_public_ip_command = 'wget -qO- http://ipecho.net/plain ; echo'
 
+        self.env.set_hostname_command = 'hostnamectl set-hostname {hostname}'
+
+        self.env.auto_reboot = 1
+
     def record_manifest(self):
         """
         Returns a dictionary representing a serialized state of the service.
@@ -390,7 +394,8 @@ class HostnameSatchel(Satchel):
         return ret
 
     @task
-    def configure(self):
+    @runs_once
+    def configure(self, reboot=1):
         """
         Assigns a name to the server accessible from user space.
 
@@ -405,10 +410,9 @@ class HostnameSatchel(Satchel):
             with settings(warn_only=True):
                 r.sudo('echo "{hostname}" > /etc/hostname')
                 r.sudo('echo "127.0.0.1 {hostname}" | cat - /etc/hosts > /tmp/out && mv /tmp/out /etc/hosts')
-                #Deprecated in Ubuntu 15?
-                #r.sudo('service hostname restart; sleep 3')
-                r.sudo('hostname {hostname}')
-                r.reboot()#new_hostname=hostname)
+                r.sudo(r.env.set_hostname_command)
+                if r.env.auto_reboot and int(reboot):
+                    r.reboot()
 
 class HostsFileSatchel(Satchel):
     """

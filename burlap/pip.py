@@ -250,6 +250,10 @@ class PIPSatchel(Satchel):
     @task(precursors=['packager', 'user'])
     def configure(self, *args, **kwargs):
 
+        clean = int(kwargs.pop('clean', 0))
+        if clean:
+            self.clean_virtualenv()
+
         # Necessary to make warning message go away.
         # http://stackoverflow.com/q/27870003/247542
         self.genv['sudo_prefix'] += '-H '

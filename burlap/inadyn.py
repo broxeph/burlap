@@ -91,6 +91,7 @@ class InadynSatchel(ServiceSatchel):
         r.sudo('chown {config_user}:{config_group} {config_path}')
         r.sudo('chmod {config_chmod} {config_path}')
         del self.genv['inadyn_aliases']
+        r.install_config(local_path='inadyn/etc_default_inadyn.template', remote_path='/etc/default/inadyn')
 
     @task(precursors=['packager', 'user'])
     def configure(self):

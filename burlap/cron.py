@@ -48,12 +48,12 @@ class CronSatchel(ServiceSatchel):
             },
             DISABLE:{
                 FEDORA: 'systemctl disable crond.service',
-                UBUNTU: 'chkconfig cron off',
+                UBUNTU: 'systemctl disable cron',
                 (UBUNTU, '14.04'): 'update-rc.d -f cron remove',
             },
             ENABLE:{
                 FEDORA: 'systemctl enable crond.service',
-                UBUNTU: 'chkconfig cron on',
+                UBUNTU: 'systemctl enable cron',
                 (UBUNTU, '14.04'): 'update-rc.d cron defaults',
                 (UBUNTU, '16.04'): 'systemctl enable cron',
             },
@@ -75,12 +75,13 @@ class CronSatchel(ServiceSatchel):
     @task
     def deploy_logrotate(self):
         r = self.local_renderer
-        for template_fn, remote_path in r.env.logrotate_templates:
-            r.env.remote_path = remote_path
-            r.install_config(local_path=template_fn, remote_path=remote_path)
-            r.sudo('chown root:root {remote_path}')
-            r.sudo('chmod 600 {remote_path}')
-            r.sudo('logrotate {remote_path} --verbose')
+        with self.settings(warn_only=True):
+            for template_fn, remote_path in r.env.logrotate_templates:
+                r.env.remote_path = remote_path
+                r.install_config(local_path=template_fn, remote_path=remote_path)
+                r.sudo('chown root:root {remote_path}')
+                r.sudo('chmod 600 {remote_path}')
+                r.sudo('logrotate {remote_path} --verbose')
 
     def deploy(self, site=None):
         """

@@ -111,6 +111,11 @@ class DjangoSatchel(Satchel):
 
         self.env.migrate_pre_command = ''
 
+        # If true, ignores errors that happen when migrate is run.
+        # Useful in multitenant dev environments where you don't want
+        # one missing password to break the entire deployment.
+        self.env.ignore_migration_errors = 0
+
         # The path relative to fab where the code resides.
         self.env.src_dir = 'src'
 
@@ -340,9 +345,9 @@ class DjangoSatchel(Satchel):
         if self.verbose:
             print('install_sql.db_engine:', r.env.db_engine)
 
-        for site, site_data in self.iter_sites(site=site, no_secure=True):
+        for _site, site_data in self.iter_sites(site=site, no_secure=True):
 
-            self.set_db(name=name, site=site)
+            self.set_db(name=name, site=_site)
 
             if 'postgres' in r.env.db_engine or 'postgis' in r.env.db_engine:
                 paths = list(get_paths('postgresql'))
@@ -633,7 +638,7 @@ class DjangoSatchel(Satchel):
         return tuple(r.env.version)
 
     @task
-    def migrate(self, app='', migration='', site=None, fake=0, ignore_errors=0, skip_databases=None, database=None, migrate_apps='', delete_ghosts=1):
+    def migrate(self, app='', migration='', site=None, fake=0, ignore_errors=None, skip_databases=None, database=None, migrate_apps='', delete_ghosts=1):
         """
         Runs the standard South migrate command for one or more sites.
         """
@@ -645,7 +650,7 @@ class DjangoSatchel(Satchel):
 
         r = self.local_renderer
 
-        ignore_errors = int(ignore_errors)
+        ignore_errors = int(r.env.ignore_migration_errors if ignore_errors is None else ignore_errors)
 
         delete_ghosts = int(delete_ghosts)
 
@@ -667,10 +672,7 @@ class DjangoSatchel(Satchel):
         if app:
             migrate_apps.append(app)
 
-        #print('ignore_errors:', ignore_errors)
-
         r.env.migrate_migration = migration or ''
-    #     print('r.env.migrate_migration:', r.env.migrate_migration)
         r.env.migrate_fake_str = '--fake' if int(fake) else ''
         r.env.migrate_database = '--database=%s' % database if database else ''
         r.env.migrate_merge = '--merge' if not post_south else ''
@@ -698,18 +700,14 @@ class DjangoSatchel(Satchel):
                     self.vprint('skipping site:', _site, sites_on_host, file=sys.stderr)
                     continue
 
-    #         print('migrate_apps:', migrate_apps, file=sys.stderr)
             if not migrate_apps:
                 migrate_apps.append(' ')
 
             for _app in migrate_apps:
-    #             print('app:', _app)
                 # In cases where we're migrating built-in apps or apps with dotted names
                 # e.g. django.contrib.auth, extract the name used for the migrate command.
                 r.env.migrate_app = _app.split('.')[-1]
-    #             print('r.env.migrate_app:', r.env.migrate_app)
                 self.vprint('project_dir1:', r.env.project_dir, r.genv.get('dj_project_dir'), r.genv.get('project_dir'))
-                #print('dj.SITE:', _site)
                 r.env.SITE = _site
                 with self.settings(warn_only=ignore_errors):
                     r.run_or_local(

@@ -12,6 +12,8 @@ import inspect
 import warnings
 from pprint import pprint
 
+import json
+
 try:
     from fabric.api import env
     from fabric.tasks import WrappedCallableTask
@@ -69,7 +71,7 @@ except (ImportError, NameError) as e:
     print('Unable to initialize debug: %s' % e, file=sys.stderr)
     debug = None
 
-VERSION = (0, 9, 50)
+VERSION = (0, 9, 51)
 __version__ = '.'.join(map(str, VERSION))
 
 burlap_populate_stack = int(os.environ.get('BURLAP_POPULATE_STACK', 1))
@@ -277,6 +279,40 @@ try:
         return debug.debug.shell(*args, **kwargs)
 except NameError:
     pass
+
+
+CHECK_VERSION = int(os.environ.get('BURLAP_CHECK_VERSION', '1'))
+
+
+def check_version():
+    """
+    Compares the local version against the latest official version on PyPI and displays a warning message if a newer release is available.
+
+    This check can be disabled by setting the environment variable BURLAP_CHECK_VERSION=0.
+    """
+    global CHECK_VERSION
+    if not CHECK_VERSION:
+        return
+    # Ensure we only check once in this process.
+    CHECK_VERSION = 0
+    # Lookup most recent remote version.
+    from six.moves.urllib.request import urlopen
+    response = urlopen("https://pypi.org/pypi/burlap/json")
+    data = json.loads(response.read().decode())
+    remote_release = tuple(sorted(map(int, _.split('.')) for _ in data['releases'].keys())[-1])
+    remote_release_str = '.'.join(map(str, remote_release))
+    local_release = VERSION
+    local_release_str = '.'.join(map(str, local_release))
+    # Display warning.
+    if remote_release > local_release:
+        print('\033[93m')
+        print("You are using burlap version %s, however version %s is available." % (local_release_str, remote_release_str))
+        print("You should consider upgrading via the 'pip install --upgrade burlap' command.")
+        print('\033[0m')
+
+
+check_version()
+
 
 def populate_fabfile():
     """
