@@ -297,19 +297,23 @@ def check_version():
     CHECK_VERSION = 0
     # Lookup most recent remote version.
     from six.moves.urllib.request import urlopen
-    response = urlopen("https://pypi.org/pypi/burlap/json")
-    data = json.loads(response.read().decode())
-    remote_release = tuple(sorted(map(int, _.split('.')) for _ in data['releases'].keys())[-1])
-    remote_release_str = '.'.join(map(str, remote_release))
-    local_release = VERSION
-    local_release_str = '.'.join(map(str, local_release))
-    # Display warning.
-    if remote_release > local_release:
+    try:
+        response = urlopen("https://pypi.org/pypi/burlap/json")
+        data = json.loads(response.read().decode())
+        remote_release = sorted(tuple(map(int, _.split('.'))) for _ in data['releases'].keys())[-1]
+        remote_release_str = '.'.join(map(str, remote_release))
+        local_release = VERSION
+        local_release_str = '.'.join(map(str, local_release))
+        # Display warning.
+        if remote_release > local_release:
+            print('\033[93m')
+            print("You are using burlap version %s, however version %s is available." % (local_release_str, remote_release_str))
+            print("You should consider upgrading via the 'pip install --upgrade burlap' command.")
+            print('\033[0m')
+    except Exception as exc:
         print('\033[93m')
-        print("You are using burlap version %s, however version %s is available." % (local_release_str, remote_release_str))
-        print("You should consider upgrading via the 'pip install --upgrade burlap' command.")
+        print("Unable to check for updated burlap version: %s" % exc)
         print('\033[0m')
-
 
 check_version()
 
