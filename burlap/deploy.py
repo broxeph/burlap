@@ -291,6 +291,7 @@ class DeploySatchel(ContainerSatchel):
                 if self.genv.host_string == self.genv.hosts[0]:
                     execute(partial(self.preview, components=components, ask=1))
 
+            notifier.notify_pre_deployment()
             component_order, plan_funcs = self.get_component_funcs(components=components)
 
             service.pre_deploy()
@@ -298,6 +299,7 @@ class DeploySatchel(ContainerSatchel):
                 print('Executing %s...' % func_name)
                 plan_func()
             self.fake(components=components)
+
             service.post_deploy()
             notifier.notify_post_deployment()
 

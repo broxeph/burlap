@@ -7,6 +7,7 @@ from burlap import Satchel
 from burlap.constants import *
 from burlap.decorators import task
 
+
 class DeploymentNotifierSatchel(Satchel):
 
     name = 'deploymentnotifier'
@@ -41,7 +42,6 @@ class DeploymentNotifierSatchel(Satchel):
 
         # Send the message via our own SMTP server, but don't include the
         # envelope header.
-        #if self.verbose:
         print('Attempting to send mail using %s@%s...' \
             % (self.env.email_host_user, self.env.email_host))
         s = smtplib.SMTP(self.env.email_host, self.env.email_port)
@@ -61,11 +61,16 @@ class DeploymentNotifierSatchel(Satchel):
             recipient_list=self.env.email_recipient_list)
 
     @task
-    def notify_post_deployment(self, subject=None, message=None, force=0):
-        from burlap import common
+    def notify_deployment(self, is_post_deployment, subject=None, message=None, force=0):
         force = int(force)
-        subject = subject or '%s Deployment Complete' % self.genv.ROLE.title()
-        message = message or 'Deployment to %s is complete.' % self.genv.ROLE
+
+        if is_post_deployment:
+            subject = subject or '%s Deployment Complete' % self.genv.ROLE.title()
+            message = message or 'Deployment to %s is complete.' % self.genv.ROLE
+        else:
+            subject = subject or '%s Deployment Started' % self.genv.ROLE.title()
+            message = message or 'Deployment to %s has started.' % self.genv.ROLE
+
         if self.dryrun:
             self.print_command('echo -e "{body}" | mail -s "{subject}" {recipients}'.format(
                 recipients=','.join(self.env.email_recipient_list),
@@ -79,8 +84,17 @@ class DeploymentNotifierSatchel(Satchel):
                 recipient_list=self.env.email_recipient_list)
 
     @task
+    def notify_pre_deployment(self, subject=None, message=None, force=0):
+        self.notify_deployment(is_post_deployment=False, subject=subject, message=message, force=force)
+
+    @task
+    def notify_post_deployment(self, subject=None, message=None, force=0):
+        self.notify_deployment(is_post_deployment=True, subject=subject, message=message, force=force)
+
+    @task
     def configure(self):
         pass
+
 
 class LoginNotifierSatchel(Satchel):
     """
@@ -133,6 +147,7 @@ class LoginNotifierSatchel(Satchel):
 
 
 deployment_notifier = DeploymentNotifierSatchel()
+notify_pre_deployment = deployment_notifier.notify_pre_deployment
 notify_post_deployment = deployment_notifier.notify_post_deployment
 send_email = deployment_notifier.send_email
 
