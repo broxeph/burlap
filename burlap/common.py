@@ -19,6 +19,7 @@ import uuid
 import inspect
 from collections import namedtuple, OrderedDict
 from pprint import pprint
+from functools import partial
 #from datetime import date
 
 import six
@@ -1015,6 +1016,11 @@ class Satchel(object):
     def iter_sites(self, *args, **kwargs):
         kwargs.setdefault('verbose', self.verbose)
         return iter_sites(*args, **kwargs)
+
+    def load_site(self, role=None, site=None):
+        if hasattr(role, 'role'):
+            role = role.role
+        return RoleLoader(role=role or env[ROLE], site=site)
 
     @property
     def is_selected(self):
@@ -2756,7 +2762,38 @@ def set_role(role):
         return
     env[ROLE] = os.environ[ROLE] = role
 
-def iter_sites(sites=None, site=None, renderer=None, setter=None, no_secure=False, verbose=None):
+
+class RoleLoader():
+    """
+    A context manager that temporarily loads a role and site configuration.
+    """
+
+    def __init__(self, role, site=None):
+        import burlap
+        self.role0 = env[ROLE]
+        self.role = role
+        self.role_loader = getattr(burlap, 'role_%s' % role)
+        self.site0 = env[SITE]
+        self.site = site
+        self.iter = None
+
+    def __enter__(self):
+        # Populate env.
+        self.iter = iter_sites(site=self.site, role_loader=partial(self.role_loader, site=self.site))
+        ret = next(self.iter)
+
+    def __exit__(self, *args):
+        # Cleanup env.
+        try:
+            while 1:
+                ret = next(self.iter)
+        except StopIteration:
+            pass
+        env[ROLE] = self.role0
+        env[SITE] = self.site0
+
+
+def iter_sites(sites=None, site=None, renderer=None, setter=None, no_secure=False, verbose=None, role_loader=None):
     """
     Iterates over sites, safely setting environment variables for each site.
     """
@@ -2777,6 +2814,9 @@ def iter_sites(sites=None, site=None, renderer=None, setter=None, no_secure=Fals
 
     renderer = renderer #or render_remote_paths
     env_default = save_env()
+    if callable(role_loader):
+        role_loader()
+    env_default_role = save_env()
     for _site, site_data in sorted(sites):
         if no_secure and _site.endswith('_secure'):
             continue
@@ -2791,7 +2831,7 @@ def iter_sites(sites=None, site=None, renderer=None, setter=None, no_secure=Fals
                     print('Skipping site %s because not in among target sites.' % _site)
                 continue
 
-        env.update(env_default)
+        env.update(env_default_role)
         env.update(env.sites.get(_site, {}))
         env.SITE = _site
         if callable(renderer):

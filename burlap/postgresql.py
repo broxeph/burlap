@@ -9,9 +9,9 @@ from __future__ import print_function
 
 import os
 
-from fabric.api import cd, hide, sudo, settings#, runs_once
-
 import six
+
+from fabric.api import cd, hide, sudo, settings
 
 from burlap import Satchel
 from burlap.constants import *
@@ -146,13 +146,13 @@ class PostgreSQLSatchel(DatabaseSatchel):
 
         # Note, if you use gzip, you can't use parallel restore.
         #self.env.dump_command = 'time pg_dump -c -U {db_user} --no-password --blobs --format=c --schema=public --host={db_host} {db_name} > {dump_fn}'
-        self.env.dump_command = 'time pg_dump -c -U {db_user} --no-password --blobs --format=c --schema=public --host={db_host} {db_name} | ' \
+        self.env.dump_command = 'time pg_dump -c -U {db_user} --no-password --blobs --format=c --schema=public --host={db_host} --dbname={db_name} | ' \
             'gzip -c > {dump_fn}'
         self.env.dump_fn_template = '{dump_dest_dir}/db_{db_type}_{SITE}_{ROLE}_{db_name}_$(date +%Y%m%d).sql.gz'
 
         #self.env.load_command = 'gunzip < {remote_dump_fn} | pg_restore --jobs=8 -U {db_root_username} --format=c --create --dbname={db_name}'
         self.env.load_command = 'gunzip < {remote_dump_fn} | ' \
-            'pg_restore -U {db_root_username} --host={db_host} --format=c --clean --if-exists --dbname={db_name}'
+            'pg_restore -U {db_root_username} --host={db_host} --format=c --clean --if-exists --schema=public --dbname={db_name}'
 
         self.env.createlangs = ['plpgsql'] # plpythonu
         self.env.postgres_user = 'postgres'
@@ -165,6 +165,10 @@ class PostgreSQLSatchel(DatabaseSatchel):
         self.env.force_version = None
         self.env.version_command = r'`psql --version | grep -m 1 -o -E "[0-9]+\.[0-9]+" | head -1`'
         self.env.engine = POSTGRESQL # 'postgresql' | postgis
+
+        # If true, treats the current database as existing as a schema in a multi-tenant environment,
+        # so commands to drop/create the entire database will be replaced with commands to drop/create a schema.
+        self.env.schema_mt = False
 
         self.env.db_root_username = 'postgres'
         self.env.db_root_password = 'password'
@@ -390,9 +394,7 @@ class PostgreSQLSatchel(DatabaseSatchel):
 
         prep_only = int(prep_only)
 
-        missing_local_dump_error = r.format(
-            "Database dump file {dump_fn} does not exist."
-        )
+        missing_local_dump_error = r.format("Database dump file {dump_fn} does not exist.")
 
         # Copy snapshot file to target.
         if self.is_local:
@@ -403,13 +405,6 @@ class PostgreSQLSatchel(DatabaseSatchel):
         if not prep_only and not self.is_local:
             if not self.dryrun:
                 assert os.path.isfile(r.env.dump_fn), missing_local_dump_error
-            #r.pc('Uploading PostgreSQL database snapshot...')
-#                 r.put(
-#                     local_path=r.env.dump_fn,
-#                     remote_path=r.env.remote_dump_fn)
-            #r.local('rsync -rvz --progress --no-p --no-g '
-                #'--rsh "ssh -o StrictHostKeyChecking=no -i {key_filename}" '
-                #'{dump_fn} {user}@{host_string}:{remote_dump_fn}')
             self.upload_snapshot(name=name, site=site, local_dump_fn=r.env.dump_fn, remote_dump_fn=r.env.remote_dump_fn)
 
         if self.is_local and not prep_only and not self.dryrun:
@@ -419,30 +414,50 @@ class PostgreSQLSatchel(DatabaseSatchel):
             r.env.db_host = force_host
 
         with settings(warn_only=True):
-            r.sudo('dropdb --if-exists --no-password --user={db_root_username} --host={db_host} {db_name}', user=r.env.postgres_user)
+            if r.env.schema_mt:
+                r.sudo('psql --no-password --user={db_root_username} --host={db_host} --dbname={db_name} -c "DROP SCHEMA IF EXISTS {db_schema};"',
+                    user=r.env.postgres_user)
+            else:
+                r.sudo('dropdb --if-exists --no-password --user={db_root_username} --host={db_host} --dbname={db_name}', user=r.env.postgres_user)
 
-        r.sudo('psql --no-password --user={db_root_username} --host={db_host} -c "CREATE DATABASE {db_name};"', user=r.env.postgres_user)
+        if r.env.schema_mt:
+            with settings(warn_only=True):
+                r.sudo('psql --no-password --user={db_root_username} --host={db_host} -c "CREATE DATABASE {db_name};"', user=r.env.postgres_user)
+            # r.sudo('psql --no-password --user={db_root_username} --host={db_host} --dbname={db_name} -c "CREATE SCHEMA {db_schema};"',
+                # user=r.env.postgres_user)
+        else:
+            r.sudo('psql --no-password --user={db_root_username} --host={db_host} -c "CREATE DATABASE {db_name};"', user=r.env.postgres_user)
 
-        with settings(warn_only=True):
-
-            if r.env.engine == POSTGIS:
+        if r.env.engine == POSTGIS:
+            with settings(warn_only=True):
                 r.sudo('psql --user={db_root_username} --no-password --dbname={db_name} --host={db_host} --command="CREATE EXTENSION postgis;"',
                     user=r.env.postgres_user)
                 r.sudo('psql --user={db_root_username} --no-password --dbname={db_name} --host={db_host} --command="CREATE EXTENSION postgis_topology;"',
                     user=r.env.postgres_user)
 
-        with settings(warn_only=True):
-            r.sudo('psql --user={db_root_username} --host={db_host} -c "REASSIGN OWNED BY {db_user} TO {db_root_username};"', user=r.env.postgres_user)
+        if not r.env.schema_mt:
+            with settings(warn_only=True):
+                r.sudo('psql --user={db_root_username} --host={db_host} -c "REASSIGN OWNED BY {db_user} TO {db_root_username};"', user=r.env.postgres_user)
+            with settings(warn_only=True):
+                r.sudo('psql --user={db_root_username} --host={db_host} -c "DROP OWNED BY {db_user} CASCADE;"', user=r.env.postgres_user)
 
-        with settings(warn_only=True):
-            r.sudo('psql --user={db_root_username} --host={db_host} -c "DROP OWNED BY {db_user} CASCADE;"', user=r.env.postgres_user)
+        if not self.exists():
+            r.sudo('psql --user={db_root_username} --host={db_host} -c "DROP USER IF EXISTS {db_user}; '
+                'CREATE USER {db_user} WITH PASSWORD \'{db_password}\';"', user=r.env.postgres_user)
+            if not r.env.schema_mt:
+                r.sudo('psql --user={db_root_username} --host={db_host} -c "GRANT ALL PRIVILEGES ON DATABASE {db_name} to {db_user};"',
+                    user=r.env.postgres_user)
+                for createlang in r.env.createlangs:
+                    r.env.createlang = createlang
+                    r.sudo('createlang -U {db_root_username} --host={db_host} {createlang} {db_name} || true', user=r.env.postgres_user)
 
-        r.sudo('psql --user={db_root_username} --host={db_host} -c "DROP USER IF EXISTS {db_user}; '
-            'CREATE USER {db_user} WITH PASSWORD \'{db_password}\'; '
-            'GRANT ALL PRIVILEGES ON DATABASE {db_name} to {db_user};"', user=r.env.postgres_user)
-        for createlang in r.env.createlangs:
-            r.env.createlang = createlang
-            r.sudo('createlang -U {db_root_username} --host={db_host} {createlang} {db_name} || true', user=r.env.postgres_user)
+        if r.env.schema_mt:
+            # This assumes each schema is associated with a unique user.
+            r.sudo('psql --user={db_root_username} --host={db_host} --dbname={db_name} -c "'
+                'CREATE SCHEMA IF NOT EXISTS {db_schema}; '
+                'GRANT ALL PRIVILEGES ON SCHEMA {db_schema} to {db_user}; '
+                'ALTER ROLE {db_user} SET search_path TO {db_schema};'
+                '"', user=r.env.postgres_user)
 
         if not prep_only:
             # Ignore errors needed to work around bug "ERROR:  schema "public" already exists", which is thrown in 9.6 even if we use --clean and --if-exists?

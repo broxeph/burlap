@@ -237,6 +237,12 @@ class DjangoSatchel(Satchel):
         r.env.db_host = default_db.get('HOST', 'localhost') # sqlite doesn't have a host
         r.env.db_password = default_db.get('PASSWORD') # sqlite doesn't have a password
         r.env.db_engine = default_db['ENGINE']
+        r.env.db_schema = 'public'
+        try:
+            # Django stores the schema in the database-specific options at ['OPTIONS']['options'].
+            r.env.db_schema = re.findall(r'search_path=([a-zA-Z0-9_]+)', default_db.get('OPTIONS', {}).get('options' or ''))[0]
+        except IndexError:
+            pass
 
         if 'mysql' in r.env.db_engine.lower():
             r.env.db_type = 'mysql'
