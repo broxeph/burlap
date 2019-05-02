@@ -71,7 +71,7 @@ except (ImportError, NameError) as e:
     print('Unable to initialize debug: %s' % e, file=sys.stderr)
     debug = None
 
-VERSION = (0, 9, 53)
+VERSION = (0, 9, 54)
 __version__ = '.'.join(map(str, VERSION))
 
 burlap_populate_stack = int(os.environ.get('BURLAP_POPULATE_STACK', 1))
@@ -297,7 +297,11 @@ def check_version():
     # Ensure we only check once in this process.
     CHECK_VERSION = 0
     # Lookup most recent remote version.
-    from six.moves.urllib.request import urlopen
+    try:
+        from six.moves.urllib.request import urlopen
+    except ImportError:
+        # The only reason this would fail is if it's being run during the initial setup.py install, when dependencies haven't all been installed yet.
+        return
     try:
         response = urlopen("https://pypi.org/pypi/burlap/json")
         data = json.loads(response.read().decode())
