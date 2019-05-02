@@ -418,7 +418,7 @@ class PostgreSQLSatchel(DatabaseSatchel):
                 r.sudo('psql --no-password --user={db_root_username} --host={db_host} --dbname={db_name} -c "DROP SCHEMA IF EXISTS {db_schema};"',
                     user=r.env.postgres_user)
             else:
-                r.sudo('dropdb --if-exists --no-password --user={db_root_username} --host={db_host} --dbname={db_name}', user=r.env.postgres_user)
+                r.sudo('dropdb --if-exists --no-password --user={db_root_username} --host={db_host} {db_name}', user=r.env.postgres_user)
 
         if r.env.schema_mt:
             with settings(warn_only=True):
