@@ -321,8 +321,6 @@ class ApacheSatchel(ServiceSatchel):
 
     def iter_certificates(self):
         r = self.local_renderer
-        if self.verbose:
-            print('apache_ssl_domain:', r.env.ssl_domain, file=sys.stderr)
         for cert_type, cert_file_template in r.env.ssl_certificates_templates:
             if self.verbose:
                 print('cert_type, cert_file_template:', cert_type, cert_file_template, file=sys.stderr)
@@ -340,10 +338,6 @@ class ApacheSatchel(ServiceSatchel):
         for _site, site_data in iter_sites(site=site, setter=self.set_site_specifics):
 
             site_secure = _site
-            if '_secure' not in site_secure:
-                site_secure = _site + '_secure'
-            if site_secure not in self.genv.sites:
-                continue
             self.set_site_specifics(site_secure)
 
             self.sudo_or_dryrun('mkdir -p %(apache_ssl_dir)s' % self.genv)
@@ -352,7 +346,7 @@ class ApacheSatchel(ServiceSatchel):
                 for cert_type, local_cert_file, remote_cert_file in self.iter_certificates():
                     if verbose:
                         print('='*80)
-                        print('Installing certificate %s...' % (remote_cert_file,))
+                        print('Installing certificate %s->%s...' % (local_cert_file, remote_cert_file,))
                     self.put_or_dryrun(
                         local_path=local_cert_file,
                         remote_path=remote_cert_file,
@@ -596,13 +590,11 @@ class ApacheSatchel(ServiceSatchel):
             for _site, site_data in self.iter_sites(site=site, setter=self.set_site_specifics):
                 r = self.local_renderer
 
-                #r.env.site = site
                 if self.verbose:
                     print('-'*80, file=sys.stderr)
                     print('Site:', _site, file=sys.stderr)
                     print('-'*80, file=sys.stderr)
 
-                r.env.ssl = _site.endswith('_secure')
                 r.env.apache_site = _site
                 r.env.server_name = r.format(r.env.domain_template)
 
