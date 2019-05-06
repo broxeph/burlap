@@ -189,11 +189,10 @@ def list_instances(show=1, name=None, group=None, release=None, except_release=N
             if except_release and release == except_release:
                 continue
             if verbose:
-                print('Adding instance %s (%s).' \
-                    % (name, instance.public_dns_name))
+                print('Adding instance %s (%s).' % (name, instance.public_dns_name or instance.ip_address))
             data.setdefault(name, type(env)())
             data[name]['id'] = instance.id
-            data[name]['public_dns_name'] = instance.public_dns_name
+            data[name]['public_dns_name'] = instance.public_dns_name or instance.ip_address
             if verbose:
                 print('Public DNS: %s' % instance.public_dns_name)
 
