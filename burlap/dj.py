@@ -450,6 +450,31 @@ class DjangoSatchel(Satchel):
                     continue
             self.manage(*args, **kwargs)
 
+    @task
+    def psql_all(self, sql, ignore_errors=None, *args, **kwargs):
+        """
+        Run psql command across all unique site default databases.
+        """
+        r = self.local_renderer
+        ignore_errors = int(r.env.ignore_migration_errors if ignore_errors is None else ignore_errors)
+        
+        self.vprint('Running SQL:', sql)
+
+        for site, site_data in self.iter_unique_databases(site='all'):
+            self.vprint('-'*80, file=sys.stderr)
+            self.vprint('site:', site, file=sys.stderr)
+            if self.env.available_sites_by_host:
+                hostname = self.current_hostname
+                sites_on_host = self.env.available_sites_by_host.get(hostname, [])
+                if sites_on_host and site not in sites_on_host:
+                    self.vprint('skipping site:', site, sites_on_host, file=sys.stderr)
+                    continue
+
+            r.env.sql = sql
+
+            with self.settings(warn_only=ignore_errors):
+                r.run('psql --user={db_user} --no-password --host={db_host} -d {db_name} --command="{sql}"')
+
     def load_django_settings(self):
         """
         Loads Django settings for the current site and sets them so Django internals can be run.
