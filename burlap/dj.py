@@ -273,7 +273,7 @@ class DjangoSatchel(Satchel):
         site = site or ALL
 
         name = database
-        
+
         assert bool(fn) ^ bool(sql), "Either fn or sql is required."
 
         r = self.local_renderer
@@ -363,7 +363,7 @@ class DjangoSatchel(Satchel):
                     r.env.sql = sql
                     with self.settings(warn_only=not stop_on_error):
                         r.run('psql --user={db_user} --no-password --host={db_host} -d {db_name} --command="{sql}"')
-                else: 
+                else:
                     paths = list(get_paths('postgresql'))
                     run_paths(
                         paths=paths,
