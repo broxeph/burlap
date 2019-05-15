@@ -157,7 +157,7 @@ class DeploySatchel(ContainerSatchel):
             get(tp_fn, fd)
             tp_text = fd.getvalue()
             manifest_data = {}
-            raw_data = yaml.load(tp_text)
+            raw_data = yaml.load(tp_text, Loader=yaml.SafeLoader)
             for k, v in raw_data.items():
                 manifest_key = assert_valid_satchel(k)
                 service_name = clean_service_name(k)

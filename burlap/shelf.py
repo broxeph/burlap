@@ -30,7 +30,7 @@ class Shelf(object):
     @property
     def _dict(self):
         try:
-            return OrderedDict(yaml.load(open(self.filename, 'rb')) or {})
+            return OrderedDict(yaml.load(open(self.filename, 'rb'), Loader=yaml.SafeLoader) or {})
         except IOError:
             return OrderedDict()
 
