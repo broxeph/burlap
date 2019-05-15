@@ -269,7 +269,7 @@ class DeploySatchel(ContainerSatchel):
 
         if ask and self.genv.host_string == self.genv.hosts[-1]:
             if component_order:
-                if not raw_input('Begin deployment? [yn] ').strip().lower().startswith('y'):
+                if not six.moves.input('Begin deployment? [yn] ').strip().lower().startswith('y'):
                     sys.exit(0)
             else:
                 sys.exit(0)

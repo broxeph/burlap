@@ -2095,7 +2095,7 @@ def reboot_or_dryrun(*args, **kwargs):
         print('%s sudo: %s' % (render_command_prefix(), command))
     else:
         if is_local():
-            if raw_input('reboot localhost now? ').strip()[0].lower() != 'y':
+            if six.moves.input('reboot localhost now? ').strip()[0].lower() != 'y':
                 return
 
         attempts = int(round(float(wait) / float(timeout)))
