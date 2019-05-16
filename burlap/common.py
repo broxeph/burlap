@@ -2107,7 +2107,7 @@ def reboot_or_dryrun(*args, **kwargs):
 
         env.host_string = reconnect_hostname
         success = False
-        for attempt in xrange(attempts):
+        for attempt in six.moves.range(attempts):
 
             # Try to make sure we don't slip in before pre-reboot lockdown
             if verbose:
