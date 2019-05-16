@@ -262,9 +262,9 @@ class DjangoSatchel(Satchel):
         return default_db
 
     @task
-    def install_sql(self, site=None, database='default', apps=None, stop_on_error=0, fn=None):
+    def install_sql(self, site=None, database='default', apps=None, stop_on_error=0, fn=None, sql=None):
         """
-        Installs all custom SQL.
+        Install custom SQL, by filename or string.
         """
         #from burlap.db import load_db_set
 
@@ -273,6 +273,8 @@ class DjangoSatchel(Satchel):
         site = site or ALL
 
         name = database
+
+        assert bool(fn) ^ bool(sql), "Either fn or sql is required."
 
         r = self.local_renderer
         paths = glob.glob(r.format(r.env.install_sql_path_template))
@@ -357,16 +359,24 @@ class DjangoSatchel(Satchel):
             self.set_db(name=name, site=_site)
 
             if 'postgres' in r.env.db_engine or 'postgis' in r.env.db_engine:
-                paths = list(get_paths('postgresql'))
-                run_paths(
-                    paths=paths,
-                    cmd_template="psql --host={db_host} --user={db_user} --no-password -d {db_name} -f {sql_path}")
+                if sql:
+                    r.env.sql = sql
+                    with self.settings(warn_only=not stop_on_error):
+                        r.run('psql --user={db_user} --no-password --host={db_host} -d {db_name} --command="{sql}"')
+                else:
+                    paths = list(get_paths('postgresql'))
+                    run_paths(
+                        paths=paths,
+                        cmd_template="psql --host={db_host} --user={db_user} --no-password -d {db_name} -f {sql_path}")
 
             elif 'mysql' in r.env.db_engine:
-                paths = list(get_paths('mysql'))
-                run_paths(
-                    paths=paths,
-                    cmd_template="mysql -v -h {db_host} -u {db_user} -p'{db_password}' {db_name} < {sql_path}")
+                if sql:
+                    raise NotImplementedError("Custom SQL commands are not yet supported for MySQL.")
+                else:
+                    paths = list(get_paths('mysql'))
+                    run_paths(
+                        paths=paths,
+                        cmd_template="mysql -v -h {db_host} -u {db_user} -p'{db_password}' {db_name} < {sql_path}")
 
             else:
                 raise NotImplementedError
