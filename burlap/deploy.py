@@ -151,13 +151,12 @@ class DeploySatchel(ContainerSatchel):
         """
         components = str_to_component_list(components)
         tp_fn = self.manifest_filename
-        tp_text = None
         if self.file_exists(tp_fn):
             fd = six.BytesIO()
             get(tp_fn, fd)
             tp_text = fd.getvalue()
             manifest_data = {}
-            raw_data = yaml.load(tp_text, Loader=yaml.SafeLoader)
+            raw_data = yaml.load(tp_text, Loader=yaml.Loader)  # SafeLoader can't load native tuples
             for k, v in raw_data.items():
                 manifest_key = assert_valid_satchel(k)
                 service_name = clean_service_name(k)

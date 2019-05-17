@@ -8,8 +8,8 @@ from burlap import ServiceSatchel
 from burlap.constants import *
 from burlap.decorators import task
 
-class ApacheSatchel(ServiceSatchel):
 
+class ApacheSatchel(ServiceSatchel):
     name = 'apache'
 
     post_deploy_command = 'reload'
@@ -33,66 +33,73 @@ class ApacheSatchel(ServiceSatchel):
             mod_lst.append('libapache2-mod-rpaf')
 
         if self.env.visitors_enabled:
-            #TODO:fix? package removed in Ubuntu 16?
+            # TODO:fix? package removed in Ubuntu 16?
             mod_lst.append('visitors')
+
+        if sys.version_info.major == 3:
+            # Note that for Python 3, libapache2-mod-wsgi may need to be removed if installed.
+            mod_wsgi = 'libapache2-mod-wsgi-py3'
+        else:
+            mod_wsgi = 'libapache2-mod-wsgi'
 
         return {
             FEDORA: ['httpd'] + mod_lst,
-            UBUNTU: ['apache2', 'libapache2-mod-wsgi'] + mod_lst,
-            (UBUNTU, '12.04'): ['apache2', 'libapache2-mod-wsgi'] + mod_lst,
-            (UBUNTU, '12.10'): ['apache2', 'libapache2-mod-wsgi'] + mod_lst,
-            (UBUNTU, '14.04'): ['apache2', 'libapache2-mod-wsgi', 'apache2-utils'] + mod_lst,
-            (UBUNTU, '14.10'): ['apache2', 'libapache2-mod-wsgi', 'apache2-utils'] + mod_lst,
-            (UBUNTU, '16.04'): ['apache2', 'libapache2-mod-wsgi', 'apache2-utils'] + mod_lst,
-            (UBUNTU, '16.10'): ['apache2', 'libapache2-mod-wsgi', 'apache2-utils'] + mod_lst,
+            UBUNTU: ['apache2', mod_wsgi] + mod_lst,
+            (UBUNTU, '12.04'): ['apache2', mod_wsgi] + mod_lst,
+            (UBUNTU, '12.10'): ['apache2', mod_wsgi] + mod_lst,
+            (UBUNTU, '14.04'): ['apache2', mod_wsgi, 'apache2-utils'] + mod_lst,
+            (UBUNTU, '14.10'): ['apache2', mod_wsgi, 'apache2-utils'] + mod_lst,
+            (UBUNTU, '16.04'): ['apache2', mod_wsgi, 'apache2-utils'] + mod_lst,
+            (UBUNTU, '16.10'): ['apache2', mod_wsgi, 'apache2-utils'] + mod_lst,
+            (UBUNTU, '16.10'): ['apache2', mod_wsgi, 'apache2-utils'] + mod_lst,
         }
 
     def set_defaults(self):
 
         self.env.service_commands = {
-#             START:{
-#                 UBUNTU: 'service network-manager start',
-#             },
-#             STOP:{
-#                 UBUNTU: 'service network-manager stop',
-#             },
-#             DISABLE:{
-#                 UBUNTU: 'chkconfig network-manager off',
-#             },
-#             ENABLE:{
-#                 UBUNTU: 'chkconfig network-manager on',
-#             },
-#             RESTART:{
-#                 UBUNTU: 'service network-manager restart',
-#             },
-#             STATUS:{
-#                 UBUNTU: 'service network-manager status',
-#             },
-            START:{
+            #             START:{
+            #                 UBUNTU: 'service network-manager start',
+            #             },
+            #             STOP:{
+            #                 UBUNTU: 'service network-manager stop',
+            #             },
+            #             DISABLE:{
+            #                 UBUNTU: 'chkconfig network-manager off',
+            #             },
+            #             ENABLE:{
+            #                 UBUNTU: 'chkconfig network-manager on',
+            #             },
+            #             RESTART:{
+            #                 UBUNTU: 'service network-manager restart',
+            #             },
+            #             STATUS:{
+            #                 UBUNTU: 'service network-manager status',
+            #             },
+            START: {
                 FEDORA: 'systemctl start httpd.service',
                 UBUNTU: 'service apache2 start',
             },
-            STOP:{
+            STOP: {
                 FEDORA: 'systemctl stop httpd.service',
                 UBUNTU: 'service apache2 stop',
             },
-            DISABLE:{
+            DISABLE: {
                 FEDORA: 'systemctl disable httpd.service',
                 UBUNTU: 'chkconfig apache2 off',
                 (UBUNTU, '14.04'): 'update-rc.d -f apache2 remove',
             },
-            ENABLE:{
+            ENABLE: {
                 FEDORA: 'systemctl enable httpd.service',
                 UBUNTU: 'chkconfig apache2 on',
                 (UBUNTU, '14.04'): 'update-rc.d apache2 defaults',
             },
-            RELOAD:{
+            RELOAD: {
                 FEDORA: 'systemctl reload httpd.service',
                 UBUNTU: 'service apache2 reload',
             },
-            RESTART:{
+            RESTART: {
                 FEDORA: 'systemctl restart httpd.service',
-                #UBUNTU: 'service apache2 restart',
+                # UBUNTU: 'service apache2 restart',
                 # Note, the sleep 5 is necessary because the stop/start appears to
                 # happen in the background but gets aborted if Fabric exits before
                 # it completes.
@@ -112,7 +119,7 @@ class ApacheSatchel(ServiceSatchel):
 
         self.env.auth_basic = False
         self.env.auth_basic_authuserfile = '{apache_docroot}/.htpasswd_{apache_site}'
-        self.env.auth_basic_users = [] # [(user,password)]
+        self.env.auth_basic_users = []  # [(user,password)]
 
         # If true, activates a rewrite rule that causes domain.com to redirect
         # to www.domain.com.
@@ -161,8 +168,8 @@ class ApacheSatchel(ServiceSatchel):
         self.env.wsgi_processes = 5
         self.env.wsgi_threads = 15
 
-        self.env.domain_redirect_templates = [] # [(wrong_domain,right_domain)]
-        self.env.domain_redirects = [] # [(wrong_domain,right_domain)]
+        self.env.domain_redirect_templates = []  # [(wrong_domain,right_domain)]
+        self.env.domain_redirects = []  # [(wrong_domain,right_domain)]
 
         self.env.extra_rewrite_rules = ''
 
@@ -172,11 +179,11 @@ class ApacheSatchel(ServiceSatchel):
 
         self.env.modevasive_enabled = False
         self.env.modevasive_DOSEmailNotify = 'admin@localhost'
-        self.env.modevasive_DOSPageInterval = 1 # seconds
+        self.env.modevasive_DOSPageInterval = 1  # seconds
         self.env.modevasive_DOSPageCount = 2
         self.env.modevasive_DOSSiteCount = 50
-        self.env.modevasive_DOSSiteInterval = 1 # seconds
-        self.env.modevasive_DOSBlockingPeriod = 10 # seconds
+        self.env.modevasive_DOSSiteInterval = 1  # seconds
+        self.env.modevasive_DOSBlockingPeriod = 10  # seconds
 
         self.env.modsecurity_enabled = False
         self.env.modsecurity_download_url = 'https://github.com/SpiderLabs/owasp-modsecurity-crs/tarball/master'
@@ -242,7 +249,7 @@ class ApacheSatchel(ServiceSatchel):
         # Useful for easily keying domain-local.com/domain-dev.com/domain-staging.com.
         self.env.locale = ''
 
-        self.env.sync_sets = {} # {name:[dict(local_path='static/', remote_path='$AWS_BUCKET:/')]}
+        self.env.sync_sets = {}  # {name:[dict(local_path='static/', remote_path='$AWS_BUCKET:/')]}
 
         # This will be appended to the custom Apache configuration file.
         self.env.httpd_conf_append = []
@@ -282,28 +289,28 @@ class ApacheSatchel(ServiceSatchel):
         calculates the optimal number of processes that should be allocated for each WSGI site.
         """
         r = self.local_renderer
-        #r.env.wsgi_processes = 5
+        # r.env.wsgi_processes = 5
         r.env.wsgi_server_memory_gb = 8
 
         verbose = self.verbose
 
         all_sites = list(self.iter_sites(site=ALL, setter=self.set_site_specifics))
 
-        #(current_mem/current_sites)/current_process = ()
-        #(16/x)/(8/16) = y
-        #(16/x)*(16/8) = y
-        #(16*16)/(num_sites*8) = y
+        # (current_mem/current_sites)/current_process = ()
+        # (16/x)/(8/16) = y
+        # (16/x)*(16/8) = y
+        # (16*16)/(num_sites*8) = y
 
-#     @task
-#     def visitors(self, force=0):
-#         """
-#         Generates an Apache access report using the Visitors command line tool.
-#         Requires the APACHE2_VISITORS service to be enabled for the current host.
-#         """
-#         if not int(force):
-#             assert ApacheVisitors.name.upper() in self.genv.services or ApacheVisitors.name.lower() in self.genv.services, \
-#                 'Visitors has not been configured for this host.'
-#         self.run('visitors -o text /var/log/apache2/%(apache_application_name)s-access.log* | less' % self.genv)
+    #     @task
+    #     def visitors(self, force=0):
+    #         """
+    #         Generates an Apache access report using the Visitors command line tool.
+    #         Requires the APACHE2_VISITORS service to be enabled for the current host.
+    #         """
+    #         if not int(force):
+    #             assert ApacheVisitors.name.upper() in self.genv.services or ApacheVisitors.name.lower() in self.genv.services, \
+    #                 'Visitors has not been configured for this host.'
+    #         self.run('visitors -o text /var/log/apache2/%(apache_application_name)s-access.log* | less' % self.genv)
 
     def create_local_renderer(self):
         """
@@ -345,7 +352,7 @@ class ApacheSatchel(ServiceSatchel):
             if self.genv.apache_ssl:
                 for cert_type, local_cert_file, remote_cert_file in self.iter_certificates():
                     if verbose:
-                        print('='*80)
+                        print('=' * 80)
                         print('Installing certificate %s->%s...' % (local_cert_file, remote_cert_file,))
                     self.put_or_dryrun(
                         local_path=local_cert_file,
@@ -369,7 +376,7 @@ class ApacheSatchel(ServiceSatchel):
 
         for _site, site_data in self.iter_sites(site=site, setter=self.set_site_specifics):
             if self.verbose:
-                print('~'*80, file=sys.stderr)
+                print('~' * 80, file=sys.stderr)
                 print('Site:', _site, file=sys.stderr)
                 print('env.apache_auth_basic:', r.env.auth_basic, file=sys.stderr)
 
@@ -443,7 +450,7 @@ class ApacheSatchel(ServiceSatchel):
                 r.sudo('mkdir -p {apache_sync_remote_path}')
                 r.sudo('chmod -R {apache_tmp_chmod} {apache_sync_remote_path}')
                 r.local('rsync -rvz --progress --recursive --no-p --no-g '
-                    '--rsh "ssh -o StrictHostKeyChecking=no -i {key_filename}" {apache_sync_local_path} {user}@{host_string}:{apache_sync_remote_path}')
+                        '--rsh "ssh -o StrictHostKeyChecking=no -i {key_filename}" {apache_sync_local_path} {user}@{host_string}:{apache_sync_remote_path}')
                 r.sudo('chown -R {apache_web_user}:{apache_web_group} {apache_sync_remote_path}')
 
         if iter_local_paths:
@@ -458,7 +465,7 @@ class ApacheSatchel(ServiceSatchel):
         data = 0
         for path in self.sync_media(iter_local_paths=1):
             data = min(data, get_last_modified_timestamp(path) or data)
-        #TODO:hash media names and content
+        # TODO:hash media names and content
         if self.verbose:
             print('date:', data)
         return data
@@ -503,9 +510,9 @@ class ApacheSatchel(ServiceSatchel):
 
             self.enable_mod('evasive')
         else:
-#             print('self.last_manifest:', self.last_manifest)
-#             print('a:', self.last_manifest.apache_modevasive_enabled)
-#             print('b:', self.last_manifest.modevasive_enabled)
+            #             print('self.last_manifest:', self.last_manifest)
+            #             print('a:', self.last_manifest.apache_modevasive_enabled)
+            #             print('b:', self.last_manifest.modevasive_enabled)
             if self.last_manifest.modevasive_enabled:
                 self.disable_mod('evasive')
 
@@ -537,9 +544,9 @@ class ApacheSatchel(ServiceSatchel):
 
             r.sudo('rm -f /etc/modsecurity/activated_rules/*')
             r.sudo('cd /etc/modsecurity/base_rules; '
-                'for f in * ; do ln -s /etc/modsecurity/base_rules/$f /etc/modsecurity/activated_rules/$f ; done')
+                   'for f in * ; do ln -s /etc/modsecurity/base_rules/$f /etc/modsecurity/activated_rules/$f ; done')
             r.sudo('cd /etc/modsecurity/optional_rules; '
-                'for f in * ; do ln -s /etc/modsecurity/optional_rules/$f /etc/modsecurity/activated_rules/$f ; done')
+                   'for f in * ; do ln -s /etc/modsecurity/optional_rules/$f /etc/modsecurity/activated_rules/$f ; done')
 
             r.env.httpd_conf_append.append('Include "/etc/modsecurity/activated_rules/*.conf"')
 
@@ -591,9 +598,9 @@ class ApacheSatchel(ServiceSatchel):
                 r = self.local_renderer
 
                 if self.verbose:
-                    print('-'*80, file=sys.stderr)
+                    print('-' * 80, file=sys.stderr)
                     print('Site:', _site, file=sys.stderr)
-                    print('-'*80, file=sys.stderr)
+                    print('-' * 80, file=sys.stderr)
 
                 r.env.apache_site = _site
                 r.env.server_name = r.format(r.env.domain_template)
@@ -625,7 +632,7 @@ class ApacheSatchel(ServiceSatchel):
                     self.env.site_template,
                     extra=genv,
                     formatter=partial(r.format, ignored_variables=self.env.ignored_template_variables))
-                r.env.site_conf = _site+'.conf'
+                r.env.site_conf = _site + '.conf'
                 r.env.site_conf_fqfn = os.path.join(r.env.sites_available, r.env.site_conf)
                 r.put(local_path=fn, remote_path=r.env.site_conf_fqfn, use_sudo=True)
 
@@ -675,5 +682,6 @@ class ApacheSatchel(ServiceSatchel):
         self.install_auth_basic_user_file(site=ALL)
         self.sync_media()
         self.install_ssl(site=ALL)
+
 
 apache = ApacheSatchel()
