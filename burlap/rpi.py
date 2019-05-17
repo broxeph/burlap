@@ -7,6 +7,8 @@ Tools for configuring software and features specific to a Raspberry Pi.
 import os
 import getpass
 
+import six
+
 from burlap import Satchel
 from burlap.constants import *
 from burlap.decorators import task
