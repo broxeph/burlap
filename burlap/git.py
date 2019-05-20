@@ -353,7 +353,7 @@ class GitTrackerSatchel(Satchel):
         Retrieves all commit messages for all commits between the given commit numbers
         on the current branch.
         """
-        print('REAL')
+        self.vprint('REAL')
         ret = self.local('git --no-pager log --pretty=oneline %s...%s' % (a, b), capture=True)
         if self.verbose:
             print(ret)

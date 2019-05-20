@@ -9,6 +9,7 @@ from burlap import ContainerSatchel
 from burlap.constants import *
 from burlap.decorators import task
 
+
 class JiraHelperSatchel(ContainerSatchel):
 
     name = 'jirahelper'
@@ -50,7 +51,7 @@ class JiraHelperSatchel(ContainerSatchel):
 
     @task
     def test_connection(self):
-        from jira import JIRA, JIRAError
+        from jira import JIRA
         from burlap.common import print_success, print_fail
         try:
             print('Connecting to %s with user %s...' % (self.env.server, self.env.basic_auth_username))
@@ -66,12 +67,12 @@ class JiraHelperSatchel(ContainerSatchel):
     @task
     def update_tickets_from_git(self, from_commit=None, to_commit=None):
         """
+        Find all ticket numbers and update their status in Jira.
+
         Run during a deployment.
         Looks at all commits between now and the last deployment.
-        Finds all ticket numbers and updates their status in Jira.
         """
         from jira import JIRA, JIRAError
-        #from burlap.deploy import get_last_current_diffs
         from burlap.git import gittracker, CURRENT_COMMIT
 
         r = self.local_renderer
@@ -84,8 +85,8 @@ class JiraHelperSatchel(ContainerSatchel):
             self.vprint('Not first server. Aborting.')
             return
 
-        print('self.env.update_from_git:', self.env.update_from_git)
-        print('self.genv.jirahelper_update_from_git:', self.genv.jirahelper_update_from_git)
+        self.vprint('self.env.update_from_git:', self.env.update_from_git)
+        self.vprint('self.genv.jirahelper_update_from_git:', self.genv.jirahelper_update_from_git)
         if not self.env.update_from_git:
             self.vprint('Update from git disabled. Aborting.')
             return
@@ -112,11 +113,10 @@ class JiraHelperSatchel(ContainerSatchel):
             print('Missing commit ID. Aborting.')
             return
 
-        if self.verbose:
-            print('-'*80)
-            print('last.keys:', last.keys())
-            print('-'*80)
-            print('current.keys:', current.keys())
+        self.vprint('-'*80)
+        self.vprint('last.keys:', last.keys())
+        self.vprint('-'*80)
+        self.vprint('current.keys:', current.keys())
 
 #         try:
 #             last_commit = last['GITTRACKER']['current_commit']
@@ -126,8 +126,7 @@ class JiraHelperSatchel(ContainerSatchel):
 
         # Find all tickets deployed between last deployment and now.
         tickets = self.get_tickets_between_commits(current_commit, last_commit)
-        if self.verbose:
-            print('tickets:', tickets)
+        self.vprint('tickets:', tickets)
 
         # Update all tickets in Jira.
         jira = JIRA({
@@ -150,7 +149,8 @@ class JiraHelperSatchel(ContainerSatchel):
                 self.vprint('Ticket %s retrieved.' % ticket)
                 transition_to_id = dict((t['name'], t['id']) for t in jira.transitions(issue))
                 self.vprint('%i allowable transitions found:' % len(transition_to_id))
-                pprint(transition_to_id)
+                if self.verbose:
+                    pprint(transition_to_id)
                 self.vprint('issue.fields.status.id:', issue.fields.status.id)
                 self.vprint('issue.fields.status.name:', issue.fields.status.name)
                 jira_status_id = issue.fields.status.name.title()
