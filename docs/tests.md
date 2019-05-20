@@ -93,7 +93,7 @@ they're not already installed on your computer.
 |ubuntu_14_04|<https://atlas.hashicorp.com/ubuntu/boxes/trusty64>
 
 A tox environment name is the combination of the Python version
-(either ``py26`` or ``py27``) and a target operating system.
+(either ``py26`` or ``py37``) and a target operating system.
 
 You can use ``tox -l`` to get the list of all test environments.
 
@@ -101,17 +101,17 @@ You can use the ``-e`` option to run tests in one or more specific
 environments. For example, you could run the tests using Python 2.7
 only, against both Ubuntu 12.04 and 14.04 boxes ::
 
-    $ tox -e py27-ubuntu_12_04,py27-ubuntu_14_04
+    $ tox -e py37-ubuntu_12_04,py37-ubuntu_14_04
 
 # Skipping the functional tests
 
 To run the unit tests only, you can use the ``none`` target:
 
-    $ tox -e py26-none,py27-none
+    $ tox -e py26-none,py37-none
 
 # Call a specific test:
 
-    $ tox  -c tox-full.ini -e py27-ubuntu_16_04_64 -- -s burlap/tests/functional_tests/test_md5.py::Md5Tests::test_md5sum
+    $ tox  -c tox-full.ini -e py37-ubuntu_18_04_64 -- -s burlap/tests/functional_tests/test_md5.py::Md5Tests::test_md5sum
 
 # Using a specific Vagrant box
 
@@ -119,7 +119,7 @@ If you want to run the tests with a specific Vagrant box, you can use
 the ``BURLAP_TEST_BOX`` environment variable and the ``none`` target::
 
     $ export BURLAP_TEST_BOX='mybox'
-    $ tox -e py27-none
+    $ tox -e py37-none
 
 # Using a specific Vagrant provider
 
@@ -128,7 +128,7 @@ the ``BURLAP_TEST_PROVIDER`` environment variable::
 
     $ export BURLAP_TEST_BOX='vmware_box'
     $ export BURLAP_TEST_PROVIDER='vmware_fusion'
-    $ tox -e py27-none
+    $ tox -e py37-none
 
 # Debugging functional tests
 
@@ -138,6 +138,6 @@ at the end of the test run by using the ``BURLAP_TEST_REUSE_VM`` environment
 variable:
 
     $ export BURLAP_TEST_REUSE_VM=1
-    $ tox -e py27-ubuntu_14_04 -- -x -k apache
+    $ tox -e py37-ubuntu_14_04 -- -x -k apache
     $ cd burlap/tests/functional_tests
     $ vagrant ssh
