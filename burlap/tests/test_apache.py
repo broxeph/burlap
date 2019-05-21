@@ -61,7 +61,7 @@ class ApacheTests(TestCase):
             assert not os.path.isfile('%s/plans/prod/000/thumbprints/test-dj-migrate-1' % d)
             assert not os.path.isfile('%s/plans/prod/000/thumbprints/test-dj-migrate-2' % d)
 
-            # Simulate multiple remote hosts my creating aliases of localhost.
+            # Simulate multiple remote hosts by creating aliases of localhost.
             # Note, for testing this on your localhost for a user without passwordless sudo,
             # you may have to run: `sudo chmod 777 /etc/hosts`
             # This won't work on Travis, where these will instead be set in .travis.yml.

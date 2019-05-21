@@ -63,7 +63,7 @@ class PIPSatchel(Satchel):
         r = self.local_renderer
 
         if r.env.bootstrap_method == GET_PIP:
-            r.run_or_local('curl --silent --show-error --retry 5 https://bootstrap.pypa.io/get-pip.py | python')
+            r.sudo('curl --silent --show-error --retry 5 https://bootstrap.pypa.io/get-pip.py | python')
         elif r.env.bootstrap_method == EZ_SETUP:
             r.run('wget http://peak.telecommunity.com/dist/ez_setup.py -O /tmp/ez_setup.py')
             with self.settings(warn_only=True):
