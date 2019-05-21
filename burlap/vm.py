@@ -557,7 +557,7 @@ def get_or_create(name=None, group=None, config=None, extra=0, verbose=0, backen
 
     if config:
         config_fn = common.find_template(config)
-        config = yaml.load(open(config_fn))
+        config = yaml.load(open(config_fn), Loader=yaml.SafeLoader)
         env.update(config)
 
     env.vm_type = (env.vm_type or '').lower()

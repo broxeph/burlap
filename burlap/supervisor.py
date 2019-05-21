@@ -157,14 +157,14 @@ class SupervisorSatchel(ServiceSatchel):
         """
         n = 60
         sleep_n = int(self.env.max_restart_wait_minutes/10.*60)
-        for _ in xrange(n):
+        for _ in six.moves.range(n):
             self.stop()
             if self.dryrun or not self.is_running():
                 break
             print('Waiting for supervisor to stop (%i of %i)...' % (_, n))
             time.sleep(sleep_n)
         self.start()
-        for _ in xrange(n):
+        for _ in six.moves.range(n):
             if self.dryrun or self.is_running():
                 return
             print('Waiting for supervisor to start (%i of %i)...' % (_, n))

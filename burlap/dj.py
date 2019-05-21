@@ -274,8 +274,6 @@ class DjangoSatchel(Satchel):
 
         name = database
 
-        assert bool(fn) ^ bool(sql), "Either fn or sql is required."
-
         r = self.local_renderer
         paths = glob.glob(r.format(r.env.install_sql_path_template))
 

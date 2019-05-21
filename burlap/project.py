@@ -175,7 +175,7 @@ class ProjectSatchel(ContainerSatchel):
             load_func = yaml.load
             dump_func = yaml.dump
         settings_fn = path.format(role=role)
-        data = load_func(open(settings_fn))
+        data = load_func(open(settings_fn), Loader=yaml.SafeLoader)
         data.update(d)
         settings_str = dump_func(data)
         open(settings_fn, 'w').write(settings_str)

@@ -156,10 +156,7 @@ class DatabaseSatchel(ServiceSatchel):
                 _d = dj.local_renderer.collect_genv(include_local=True, include_global=False)
 
                 # Copy "dj_db_*" into "db_*".
-                for k, v in _d.items():
-                    if k.startswith('dj_db_'):
-                        _d[k[3:]] = v
-                    del _d[k]
+                _d = type(_d)({k[3:]: v for k, v in _d.items() if k.startswith('dj_db_')})
 
                 if self.verbose:
                     print('Loaded:')
@@ -304,17 +301,14 @@ class DatabaseSatchel(ServiceSatchel):
         raise NotImplementedError
 
     def render_fn(self, fn):
-        return subprocess.check_output('echo %s' % fn, shell=True)
+        return subprocess.check_output('echo %s' % fn, shell=True, universal_newlines=True).strip()
 
     def get_default_db_fn(self, fn_template=None, dest_dir=None, name=None, site=None):
-
         r = self.database_renderer(name=name, site=site)
         r.dump_dest_dir = dest_dir
 
         fn = r.format(fn_template or r.env.dump_fn_template)
-        fn = self.render_fn(fn)
-        fn = fn.strip()
-        return fn
+        return self.render_fn(fn)
 
     @task
     @runs_once
@@ -323,10 +317,7 @@ class DatabaseSatchel(ServiceSatchel):
         Exports the target database to a single transportable file on the localhost,
         appropriate for loading using load().
         """
-        r = self.local_renderer
-
         site = site or self.genv.SITE
-
         r = self.database_renderer(name=name, site=site)
 
         # Load optional site-specific command, if given.

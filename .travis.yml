@@ -21,15 +21,15 @@ matrix:
             #python: 2.7
         # Ubuntu 16.04
         # https://docs.travis-ci.com/user/reference/xenial
-        -   os: linux
-            dist: xenial
-            sudo: required
-            python: 2.7
-        # TODO:Ubuntu 18.04
         #-   os: linux
-            #dist: bionic
+            #dist: xenial
             #sudo: required
-            #python: 3.7
+            #python: 2.7
+        # Ubuntu 18.04
+        -   os: linux
+            dist: bionic
+            sudo: required
+            python: 3.7
 
 # https://docs.travis-ci.com/user/hosts
 # Needed by DjTests.test_migrate
@@ -60,7 +60,7 @@ install:
 -   sudo rm -Rf /etc/apt/sources.list.d/google-chrome.list || true
 
 -   sudo apt-get -yq update
--   sudo apt-get -yq install python3.6 python3.6-dev
+-   sudo apt-get -yq install python3.7 python3.7-dev
 -   sudo apt-get -yq purge postgr*
 -   sudo apt-get -yq purge virtualbox*
 # The Oracle Java install routinely times out, and we're not using it, so uninstall it.
@@ -88,7 +88,7 @@ script:
 -   set -e
 -   ./pep8.sh
 -   tox -c tox-travis.ini -e py27-no_vagrant
--   tox -c tox-travis.ini -e py36-no_vagrant
+-   tox -c tox-travis.ini -e py37-no_vagrant
 #-   tox -c tox-travis.ini
 #-   tox -c tox-travis.ini -e py27 -- -s burlap/tests/functional_tests/test_js.py::JSTests::test_jshint
 #-   tox -c tox-travis.ini -e py27 -- -s burlap/tests/functional_tests/test_selenium.py::SeleniumTests

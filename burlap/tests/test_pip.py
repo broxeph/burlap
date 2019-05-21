@@ -12,6 +12,7 @@ from burlap.common import get_satchel
 from burlap.tests.base import TestCase
 from burlap.context import set_cwd
 
+
 class PipTests(TestCase):
 
     def test_pip_install(self):
