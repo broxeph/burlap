@@ -46,10 +46,10 @@ class BuildBotSatchel(ServiceSatchel):
         self.env.perms = '777'
 
         #DEPRECATED
-        self.env.cron_path = '/etc/cron.d/buildbot_boot'
-        self.env.cron_user = 'root'
-        self.env.cron_group = 'root'
-        self.env.cron_perms = '600'
+        # self.env.cron_path = '/etc/cron.d/buildbot_boot'
+        # self.env.cron_user = 'root'
+        # self.env.cron_group = 'root'
+        # self.env.cron_perms = '600'
 
         self.env.extra_deploy_paths = ['buildbot/worker/info/', 'buildbot/worker/buildbot.tac']
 
@@ -273,28 +273,6 @@ class BuildBotSatchel(ServiceSatchel):
         #r.sudo('{virtualenv_dir}/bin/pip install -U pip')
         r.sudo('chown -R {user}:{group} {project_dir}')
         r.sudo('chmod -R {perms} {project_dir}')
-
-    @task
-    def install_cron(self):
-        if not self.is_first_host:
-            return
-        r = self.local_renderer
-        r.sudo(
-            'printf \'SHELL=/bin/bash\\nPATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin\\n@reboot '
-            'buildbot bash -c "cd {project_dir}/src/buildbot; '
-            '{project_dir}/.env/bin/buildbot start master; '
-            '{project_dir}/.env/bin/buildbot-worker start worker"\\n\' > {cron_path}')
-        r.sudo('chown {cron_user}:{cron_group} {cron_path}')
-        # Must be 600, otherwise gives INSECURE MODE error.
-        # http://unix.stackexchange.com/questions/91202/cron-does-not-print-to-syslog
-        r.sudo('chmod {cron_perms} {cron_path}')
-        r.sudo('service cron restart')
-
-    @task
-    def uninstall_cron(self):
-        r = self.local_renderer
-        r.sudo('rm -f {cron_path} || true')
-        r.sudo('service cron restart')
 
     @task
     def deploy_code(self):

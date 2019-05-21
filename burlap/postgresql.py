@@ -331,7 +331,7 @@ class PostgreSQLSatchel(DatabaseSatchel):
                 if 'password authentication failed' in ret:
                     ret = False
                 else:
-                    ret = int(ret) >= 1
+                    ret = int(ret.split('\n')[-1]) >= 1
 
         if ret is not None:
             print('%s database on site %s %s exist' % (name, self.genv.SITE, 'DOES' if ret else 'DOES NOT'))
