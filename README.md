@@ -11,7 +11,7 @@ tool and framework for deploying software to servers.
 
 It's written in Python and is built ontop of [Fabric](http://www.fabfile.org/) to run commands remotely over SSH.
 
-Unlike [Chef](https://www.chef.io/) or [Ansible](http://www.ansible.com/) that target large "web-scale" platforms at the expense of great complexity, Burlap targets small to medium-scale platforms and keeps its configuration simple.
+Unlike [Chef](https://www.chef.io/) or [Ansible](http://www.ansible.com/) that target large "web-scale" platforms at the expense of great complexity, Burlap targets small- to medium-scale platforms and keeps its configuration simple.
 
 Much of the code is also heavily influenced by [Fabtools](https://github.com/fabtools/fabtools), another Fabric-based toolkit.
 
@@ -63,7 +63,7 @@ Satchels can define dependencies, telling Burlap to run certain tasks in a speci
 
 For example, a Django project hosted on Apache would require the Apache configuration to be deployed before any Django project code.
 
-This allows a role to contain an arbitary number of satchels, whose deployment can be calculated automatically.
+This allows a role to contain an arbitrary number of satchels, whose deployment can be calculated automatically.
 
 However, this auto-deployer can't foresee all use cases, and should exceptions arise, you can reset Burlap's last manifest, implicitly telling it that, "Everything that needs to be deployed has been deployed", but running:
 
@@ -77,7 +77,7 @@ Most Burlap tasks also support a `verbose` parameter, which will activate additi
 
     fab <role> some_task:verbose=1
 
-Nearly all of Burlap's built-in tasks run Bash commands behind the scenese. Therefore, by activating dryrun mode and hiding all superflous output except the generated Bash commands,
+Nearly all of Burlap's built-in tasks run Bash commands behind the scenes. Therefore, by activating dryrun mode and hiding all superfluous output except the generated Bash commands,
 it's possible to convert a Burlap call to a Bash script. To do this, set the environment variable `BURLAP_COMMAND_PREFIX=1`, activate dryrun, and capture the output to a file. e.g.
 
     export BURLAP_COMMAND_PREFIX=1; fab staging some_task:dryrun=1 > myscript.sh
