@@ -116,6 +116,7 @@ def create_database(name, owner, template='template0', encoding='UTF8',
                   --encoding=%(encoding)s --lc-ctype=%(locale)s \
                   --lc-collate=%(locale)s %(name)s''' % locals())
 
+
 def create_schema(name, database, owner=None):
     """
     Create a schema within a database.
@@ -124,6 +125,7 @@ def create_schema(name, database, owner=None):
         _run_as_pg('''psql %(database)s -c "CREATE SCHEMA %(name)s AUTHORIZATION %(owner)s"''' % locals())
     else:
         _run_as_pg('''psql %(database)s -c "CREATE SCHEMA %(name)s"''' % locals())
+
 
 class PostgreSQLSatchel(DatabaseSatchel):
     """
@@ -137,8 +139,8 @@ class PostgreSQLSatchel(DatabaseSatchel):
         return {
             (UBUNTU, '12.04'): ['postgresql-9.1'],
             (UBUNTU, '14.04'): ['postgresql-9.3'],
-            #(UBUNTU, '16.04'): ['postgresql-9.5'],
             (UBUNTU, '16.04'): ['postgresql-10'],
+            (UBUNTU, '18.04'): ['postgresql-11'],
         }
 
     def set_defaults(self):
@@ -209,11 +211,15 @@ class PostgreSQLSatchel(DatabaseSatchel):
         if ver.type == LINUX:
             if ver.distro == UBUNTU:
                 if ver.release == '16.04':
-                    d = {
+                    return {
                         APT: ['deb http://apt.postgresql.org/pub/repos/apt/ xenial-pgdg main'],
                         APT_KEY: ['https://www.postgresql.org/media/keys/ACCC4CF8.asc',],
                     }
-                    return d
+                elif ver.release == '18.04':
+                    return {
+                        APT: ['deb http://apt.postgresql.org/pub/repos/apt/ bionic-pgdg main'],
+                        APT_KEY: ['https://www.postgresql.org/media/keys/ACCC4CF8.asc',],
+                    }
                 else:
                     raise NotImplementedError
             else:
@@ -596,6 +602,7 @@ class PostgreSQLSatchel(DatabaseSatchel):
 
         r.sudo('service postgresql restart')
 
+
 class PostgreSQLClientSatchel(Satchel):
 
     name = 'postgresqlclient'
@@ -607,25 +614,10 @@ class PostgreSQLClientSatchel(Satchel):
     def packager_system_packages(self):
         return {
             FEDORA: ['postgresql-client'],
-#             UBUNTU: [
-#                 'postgresql-client-%s' % self.env.default_version,
-#                 #'python-psycopg2',#install from pip instead
-#                 #'postgresql-server-dev-9.3',
-#             ],
-            (UBUNTU, '12.04'): [
-                'postgresql-client-9.1',
-                #'python-psycopg2',#install from pip instead
-                #'postgresql-server-dev-9.1',
-            ],
-            (UBUNTU, '14.04'): [
-                'postgresql-client-9.3',
-                #'python-psycopg2',#install from pip instead
-                #'postgresql-server-dev-9.3',
-            ],
-            (UBUNTU, '16.04'): [
-                'postgresql-client-10',
-                #'postgresql-server-dev-10',
-            ],
+            (UBUNTU, '12.04'): ['postgresql-client-9.1'],
+            (UBUNTU, '14.04'): ['postgresql-client-9.3'],
+            (UBUNTU, '16.04'): ['postgresql-client-10'],
+            (UBUNTU, '18.04'): ['postgresql-client-11'],
         }
 
     #https://askubuntu.com/questions/831292/how-to-install-postgresql-9-6-on-any-ubuntu-version
@@ -635,11 +627,15 @@ class PostgreSQLClientSatchel(Satchel):
         if ver.type == LINUX:
             if ver.distro == UBUNTU:
                 if ver.release == '16.04':
-                    d = {
+                    return {
                         APT: ['deb http://apt.postgresql.org/pub/repos/apt/ xenial-pgdg main'],
                         APT_KEY: ['https://www.postgresql.org/media/keys/ACCC4CF8.asc',],
                     }
-                    return d
+                elif ver.release == '18.04':
+                    return {
+                        APT: ['deb http://apt.postgresql.org/pub/repos/apt/ bionic-pgdg main'],
+                        APT_KEY: ['https://www.postgresql.org/media/keys/ACCC4CF8.asc',],
+                    }
                 else:
                     raise NotImplementedError
             else:

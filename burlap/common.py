@@ -2095,7 +2095,7 @@ def reboot_or_dryrun(*args, **kwargs):
         print('%s sudo: %s' % (render_command_prefix(), command))
     else:
         if is_local():
-            if raw_input('reboot localhost now? ').strip()[0].lower() != 'y':
+            if six.moves.input('reboot localhost now? ').strip()[0].lower() != 'y':
                 return
 
         attempts = int(round(float(wait) / float(timeout)))
@@ -2107,7 +2107,7 @@ def reboot_or_dryrun(*args, **kwargs):
 
         env.host_string = reconnect_hostname
         success = False
-        for attempt in xrange(attempts):
+        for attempt in six.moves.range(attempts):
 
             # Try to make sure we don't slip in before pre-reboot lockdown
             if verbose:

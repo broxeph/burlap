@@ -151,13 +151,12 @@ class DeploySatchel(ContainerSatchel):
         """
         components = str_to_component_list(components)
         tp_fn = self.manifest_filename
-        tp_text = None
         if self.file_exists(tp_fn):
             fd = six.BytesIO()
             get(tp_fn, fd)
             tp_text = fd.getvalue()
             manifest_data = {}
-            raw_data = yaml.load(tp_text)
+            raw_data = yaml.load(tp_text, Loader=yaml.Loader)  # SafeLoader can't load native tuples
             for k, v in raw_data.items():
                 manifest_key = assert_valid_satchel(k)
                 service_name = clean_service_name(k)
@@ -269,7 +268,7 @@ class DeploySatchel(ContainerSatchel):
 
         if ask and self.genv.host_string == self.genv.hosts[-1]:
             if component_order:
-                if not raw_input('Begin deployment? [yn] ').strip().lower().startswith('y'):
+                if not six.moves.input('Begin deployment? [yn] ').strip().lower().startswith('y'):
                     sys.exit(0)
             else:
                 sys.exit(0)

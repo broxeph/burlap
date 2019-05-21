@@ -1,5 +1,6 @@
 from __future__ import absolute_import, print_function
 
+import sys
 from pprint import pprint
 
 import six
@@ -17,6 +18,7 @@ BOOTSTRAP_METHODS = (
     GET_PIP,
 )
 
+
 class PIPSatchel(Satchel):
 
     name = 'pip'
@@ -27,25 +29,10 @@ class PIPSatchel(Satchel):
             UBUNTU: [
                 'gcc', 'python-dev', 'build-essential', 'python-pip',
             ],
-            (UBUNTU, '14.04'): [
-                #'python-pip',#obsolete in 14.04?
-                #'python-virtualenv',#obsolete in 14.04?
-                'gcc', 'python-dev', 'build-essential', 'python-pip',
-            ],
-            (UBUNTU, '14.10'): [
-                'gcc', 'python-dev', 'build-essential', 'python-pip',
-            ],
-            (UBUNTU, '16.04'): [
-                'gcc', 'python-dev', 'build-essential', 'python-pip',
-            ],
-            (UBUNTU, '16.10'): [
-                'gcc', 'python-dev', 'build-essential', 'python-pip',
-            ],
         }
 
     def set_defaults(self):
-        self.env.bootstrap_method = GET_PIP
-        self.env.check_permissions = True
+        self.env.bootstrap_method = PYTHON_PIP
         self.env.user = 'www-data'
         self.env.group = 'www-data'
         self.env.perms = '775'
@@ -58,19 +45,16 @@ class PIPSatchel(Satchel):
         r = self.local_renderer
         with self.settings(warn_only=True):
             ret = (r.run_or_local('which pip') or '').strip()
-            print('pip.ret:', ret)
-            ret = bool(ret)
             if ret:
-                print('Pip is installed.')
+                print('Pip is installed at {}.'.format(ret))
             else:
                 print('Pip is not installed.')
-            return ret
+            return bool(ret)
 
     @task
     def bootstrap(self, force=0):
         """
-        Installs all the necessary packages necessary for managing virtual
-        environments with pip.
+        Install all the necessary packages necessary for managing virtual environments with pip.
         """
         force = int(force)
         if self.has_pip() and not force:
@@ -86,12 +70,13 @@ class PIPSatchel(Satchel):
                 r.sudo('python /tmp/ez_setup.py -U setuptools')
             r.sudo('easy_install -U pip')
         elif r.env.bootstrap_method == PYTHON_PIP:
-            r.sudo('apt-get install -y python-pip')
+            r.sudo('apt-get install -y {}-pip'.format('python3' if sys.version_info.major == 3 else 'python'))
         else:
             raise NotImplementedError('Unknown pip bootstrap method: %s' % r.env.bootstrap_method)
 
-        r.sudo('pip {quiet_flag} install --upgrade pip')
-        r.sudo('pip {quiet_flag} install --upgrade virtualenv')
+        # Upgrade pip, virtualenv
+        r.run_or_local('pip {quiet_flag} install --upgrade pip')
+        r.run_or_local('pip {quiet_flag} install --upgrade virtualenv')
 
     @task
     def clean_virtualenv(self, virtualenv_dir=None):
@@ -103,7 +88,7 @@ class PIPSatchel(Satchel):
     @task
     def has_virtualenv(self):
         """
-        Returns true if the virtualenv tool is installed.
+        Return true if the virtualenv tool is installed.
         """
         with self.settings(warn_only=True):
             ret = self.run_or_local('which virtualenv').strip()
@@ -115,23 +100,21 @@ class PIPSatchel(Satchel):
         Returns true if the virtual environment has been created.
         """
         r = self.local_renderer
-        ret = True
         with self.settings(warn_only=True):
             ret = r.run_or_local('ls {virtualenv_dir}') or ''
             ret = 'cannot access' not in ret.strip().lower()
 
-        if self.verbose:
-            if ret:
-                print('Yes')
-            else:
-                print('No')
+        if ret:
+            self.vprint('Yes')
+        else:
+            self.vprint('No')
 
         return ret
 
     @task
     def what_requires(self, name):
         """
-        Lists the packages that require the given package.
+        List the packages that require the given package.
         """
         r = self.local_renderer
         r.env.name = name
@@ -140,28 +123,14 @@ class PIPSatchel(Satchel):
     @task
     def init(self):
         """
-        Creates the virtual environment.
+        Create the virtual environment.
         """
         r = self.local_renderer
-
-#         if self.virtualenv_exists():
-#             print('virtualenv exists')
-#             return
 
         print('Creating new virtual environment...')
         with self.settings(warn_only=True):
             cmd = '[ ! -d {virtualenv_dir} ] && virtualenv --no-site-packages {virtualenv_dir} || true'
-            if self.is_local:
-                r.run_or_local(cmd)
-            else:
-                r.sudo(cmd)
-
-    @task
-    def set_permissions(self):
-        r = self.local_renderer
-        if not self.is_local and r.env.check_permissions:
-            r.sudo('chown -R {pip_user}:{pip_group} {virtualenv_dir}')
-            r.sudo('chmod -R {pip_perms} {virtualenv_dir}')
+            r.run_or_local(cmd)
 
     def get_combined_requirements(self, requirements=None):
         """
@@ -215,25 +184,13 @@ class PIPSatchel(Satchel):
 
         # Copy up our requirements.
         r.env.pip_remote_requirements_fn = '/tmp/pip-requirements.txt'
-        r.put(
-            local_path=tmp_fn,
-            remote_path=r.env.pip_remote_requirements_fn,
-        )
+        r.put(local_path=tmp_fn, remote_path=r.env.pip_remote_requirements_fn)
 
         # Ensure we're always using the latest pip.
-        if self.is_local:
-            r.run_or_local('{virtualenv_dir}/bin/pip {quiet_flag} install -U pip')
-        else:
-            r.sudo('{virtualenv_dir}/bin/pip {quiet_flag} install -U pip')
+        r.run_or_local('{virtualenv_dir}/bin/pip {quiet_flag} install -U pip')
 
-        cmd = "{virtualenv_dir}/bin/pip {quiet_flag} install -r {pip_remote_requirements_fn}"
-        if self.is_local:
-            r.run_or_local(cmd)
-        else:
-            r.sudo(cmd)
-
-        if not self.is_local and r.env.check_permissions:
-            self.set_permissions()
+        # Install requirements from file.
+        r.run_or_local("{virtualenv_dir}/bin/pip {quiet_flag} install -r {pip_remote_requirements_fn}")
 
     @task
     def record_manifest(self):

@@ -3,6 +3,8 @@ from __future__ import print_function
 import time
 from pprint import pprint
 
+import six
+
 from burlap.constants import *
 from burlap import Satchel
 from burlap.decorators import task, runs_once
@@ -48,7 +50,7 @@ class DNSSatchel(Satchel):
         if not self.dryrun:
             try:
                 max_retries = 10
-                for retry in xrange(max_retries):
+                for retry in six.moves.range(max_retries):
                     try:
                         client.add_record(
                             domain,
