@@ -415,7 +415,7 @@ def get_class_module_name(self):
 
 class _EnvProxy(object):
     """
-    Filters a satchel's access to the enviroment object.
+    Filters a satchel's access to the environment object.
 
     Allows referencing of environment variables without explicitly specifying
     the Satchel's namespace.
@@ -433,9 +433,7 @@ class _EnvProxy(object):
         self.satchel = satchel
 
     def __contains__(self, k):
-#         if k in ('satchel',):
-#             return k in super(_EnvProxy, self).__contains__(k)
-        k = (self.satchel.env_prefix + k)
+        k = self.satchel.env_prefix + k
         return k in env
 
     def __getitem__(self, k):
@@ -443,12 +441,12 @@ class _EnvProxy(object):
 
     def __getattr__(self, k):
         if k in ('satchel',):
-            return super(_EnvProxy, self).__getattr__(k)
+            return object.__getattribute__(self, k)
         return env.get(self.satchel.env_prefix + k)
 
     def __setattr__(self, k, v):
         if k in ('satchel',):
-            return super(_EnvProxy, self).__setattr__(k, v)
+            return object.__setattr__(self, k, v)
         env[self.satchel.env_prefix + k] = v
 
 def is_local():
@@ -587,7 +585,7 @@ class Renderer(object):
             attrname = self.env_type
 
         if attrname in ('obj', 'lenv', 'genv', 'env_type', '_set_default'):
-            return super(LocalRenderer, self).__getattribute__(attrname)
+            return object.__getattribute__(self, attrname)
 
         def wrap(func):
 
@@ -767,8 +765,6 @@ class Satchel(object):
         self._set_defaults()
 
         self._verbose = None
-
-        super(Satchel, self).__init__()
 
         self.register()
 
@@ -1539,13 +1535,7 @@ class Service(object):
         if self.post_deploy_command:
             service_post_deployers[self.name.upper()] = [getattr(self, self.post_deploy_command)]
 
-        super(Service, self).__init__()
-
         services[self.name.strip().upper()] = self
-
-#         _key = '%s_service_commands' % self.name
-#         if _key in env:
-#             self.commands = env[_key]
 
         #DEPRECATED
         tasks = (
@@ -1558,7 +1548,7 @@ class Service(object):
             'reload',
         )
         for task_name in tasks:
-            task = add_class_methods_as_module_level_functions_for_fabric(
+            add_class_methods_as_module_level_functions_for_fabric(
                 instance=self,
                 module_name=get_class_module_name(self),
                 method_name=task_name,
