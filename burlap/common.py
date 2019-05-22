@@ -441,12 +441,12 @@ class _EnvProxy(object):
 
     def __getattr__(self, k):
         if k in ('satchel',):
-            return getattr(self, k)
+            return object.__getattribute__(self, k)
         return env.get(self.satchel.env_prefix + k)
 
     def __setattr__(self, k, v):
         if k in ('satchel',):
-            return setattr(self, k, v)
+            return object.__setattr__(self, k, v)
         env[self.satchel.env_prefix + k] = v
 
 def is_local():
@@ -585,7 +585,7 @@ class Renderer(object):
             attrname = self.env_type
 
         if attrname in ('obj', 'lenv', 'genv', 'env_type', '_set_default'):
-            return getattr(self, attrname)
+            return object.__getattribute__(self, attrname)
 
         def wrap(func):
 
