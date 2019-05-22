@@ -673,7 +673,7 @@ class ApacheSatchel(ServiceSatchel):
         r = self.local_renderer
         r.sudo('[ -f {maintenance_path} ] && rm -f {maintenance_path} || true')
 
-    @task(precursors=['packager', 'user', 'hostname', 'ip'])
+    @task(precursors=['packager', 'user', 'hostname', 'ip', 'code'])
     def configure(self):
         self.configure_modevasive()
         self.configure_modsecurity()
