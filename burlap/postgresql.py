@@ -137,10 +137,10 @@ class PostgreSQLSatchel(DatabaseSatchel):
     @property
     def packager_system_packages(self):
         return {
+            UBUNTU: ['postgresql-11'],
             (UBUNTU, '12.04'): ['postgresql-9.1'],
             (UBUNTU, '14.04'): ['postgresql-9.3'],
             (UBUNTU, '16.04'): ['postgresql-10'],
-            (UBUNTU, '18.04'): ['postgresql-11'],
         }
 
     def set_defaults(self):
@@ -614,10 +614,10 @@ class PostgreSQLClientSatchel(Satchel):
     def packager_system_packages(self):
         return {
             FEDORA: ['postgresql-client'],
+            UBUNTU: ['postgresql-client-11'],
             (UBUNTU, '12.04'): ['postgresql-client-9.1'],
             (UBUNTU, '14.04'): ['postgresql-client-9.3'],
             (UBUNTU, '16.04'): ['postgresql-client-10'],
-            (UBUNTU, '18.04'): ['postgresql-client-11'],
         }
 
     #https://askubuntu.com/questions/831292/how-to-install-postgresql-9-6-on-any-ubuntu-version
